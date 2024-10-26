@@ -100,9 +100,25 @@ CREATE TABLE Catalogo.Producto (
 	LineaDeProducto NVARCHAR(100) NOT NULL,--ver si es una tabla aparte
     Nombre NVARCHAR(100) NOT NULL,
     Precio DECIMAL(10, 2) NOT NULL,
+	PrecioReferencial DECIMAL(10, 2),
+	UnidadDeReferencia NVARCHAR(2),
     SucursalID INT,
     CONSTRAINT FK_Producto_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursal(SucursalID)
 );
+
+go
+
+
+CREATE TABLE Catalogo.Catalogo (
+    ProductoID INT PRIMARY KEY,
+    LineaDeProducto NVARCHAR(100) NOT NULL,
+    Nombre NVARCHAR(100) NOT NULL,
+    Precio DECIMAL(10, 2) NOT NULL,  -- Cambiar a DECIMAL
+    PrecioReferencial DECIMAL(10, 2), -- Cambiar a DECIMAL
+    UnidadDeReferencia NVARCHAR(100),
+    Fecha DATETIME
+);
+
 go
 -- Tabla de ventas
 CREATE TABLE Ventas.Venta (
@@ -150,6 +166,21 @@ select * from Catalogo.Producto
 go
 select * from Empleados.Empleado
 go
+
+
+--Insertar datos de catalogo.csv from ../TP_integrador_Archivos\Productos\catalogo.csv
+drop table Catalogo.Catalogo
+
+BULK INSERT Catalogo.Catalogo
+FROM 'E:\Unlam\BaseDeDatosAplicada\2024-2C\TP\BDTP\TP_integrador_Archivos\Productos\catalogo.csv'
+WITH
+(
+	FORMAT = 'CSV',       -- Maneja automáticamente las comillas y delimitadores
+    CODEPAGE = '65001',  -- UTF-8
+	FIRSTROW = 2
+);
+go 
+select * from Catalogo.Catalogo
 /*
 -- ##### STORED PROCEDURES #####
 -- Procedimiento para insertar una nueva venta
@@ -200,3 +231,5 @@ BEGIN
     WHERE MONTH(Fecha) = @Mes AND YEAR(Fecha) = @Anio
     GROUP BY DAY(Fecha);
 END;*/
+
+
