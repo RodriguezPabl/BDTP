@@ -30,46 +30,115 @@ Entregar todo en un zip cuyo nombre sea Grupo_XX.zip mediante la secci�n de pr
 MIEL. Solo uno de los miembros del grupo debe hacer la entrega.
 */
 
---Si no existe la base de datos Com2900G12 la crea
-if not exists (select name from master.dbo.sysdatabases where name = 'Com2900G12')
-begin
-	Create database Com2900G12
-	Collate Latin1_General_CI_AI;
-end
+create database PruebaTP
 go
 
-use Com2900G12
+use PruebaTP
 go
 
---Si no existe el esquema supermercado lo crea
-if not exists (select * from sys.schemas where name = 'supermercado')
-begin
-	exec('Create schema supermercado')
-end
-go
+-- ##### TABLAS #####
+-- Creación de esquemas
+CREATE SCHEMA Ventas
+CREATE SCHEMA Catalogo
+CREATE SCHEMA Empleados
 
---Si no existe el esquema supermercado ni la tabla venta, crea la tabla
-if not exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = 'supermercado' and TABLE_NAME = 'venta')
-begin
-	Create table supermercado.venta (
-	facturaID varchar(11) primary key,
-	tipoFactura char,
-	ciudad varchar(30),
-	tipoCliente varchar(6),
-	genero varchar(6),
-	lineaDeProducto varchar(25),
-	precioUnitario decimal(9,2),
-	cantidad int,
-	total decimal(11,2),
-	fecha date,
-	hora time,
-	medioDePago varchar(15),
-	empleado int,
-	sucursal varchar(25)
+-- Tabla de sucursales
+CREATE TABLE Ventas.Sucursales (
+    SucursalID INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(100) NOT NULL
+);
+
+-- Tabla de empleados
+CREATE TABLE Empleados.Empleados (
+    EmpleadoID INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(100) NOT NULL,
+    SucursalID INT,
+    CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursales(SucursalID),
+    Email NVARCHAR(100) NOT NULL,
+    CONSTRAINT UQ_Email UNIQUE (Email)
+);
+
+-- Tabla de productos
+CREATE TABLE Catalogo.Productos (
+    ProductoID INT PRIMARY KEY IDENTITY(1,1),
+    Nombre NVARCHAR(100) NOT NULL,
+    Precio DECIMAL(10, 2) NOT NULL,
+    SucursalID INT,
+    CONSTRAINT FK_Producto_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursales(SucursalID)
+);
+
+-- Tabla de ventas
+CREATE TABLE Ventas.Ventas (
+    VentaID INT PRIMARY KEY IDENTITY(1,1),
+    EmpleadoID INT,
+    Fecha DATETIME NOT NULL DEFAULT GETDATE(),
+    Total DECIMAL(10, 2),
+    CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Empleados.Empleados(EmpleadoID)
+);
+
+-- Tabla de detalles de ventas
+CREATE TABLE Ventas.DetalleVentas (
+    DetalleID INT PRIMARY KEY IDENTITY(1,1),
+    VentaID INT,
+    ProductoID INT,
+    Cantidad INT,
+    Precio DECIMAL(10, 2),
+    CONSTRAINT FK_Detalle_Venta FOREIGN KEY (VentaID) REFERENCES Ventas.Ventas(VentaID),
+    CONSTRAINT FK_Detalle_Producto FOREIGN KEY (ProductoID) REFERENCES Catalogo.Productos(ProductoID)
+);
+
+select * from Ventas.Ventas
+select * from Ventas.DetalleVentas
+select * from Ventas.Sucursales
+select * from Catalogo.Productos
+select * from Empleados.Empleados
+
+-- ##### STORED PROCEDURES #####
+-- Procedimiento para insertar una nueva venta
+CREATE PROCEDURE InsertarVenta(
+    @EmpleadoID INT,
+    @Total DECIMAL(10, 2),
+    @DetalleVenta XML
 	)
-end
-go
+AS
+BEGIN
+    INSERT INTO Ventas.Ventas (EmpleadoID, Total) 
+    VALUES (@EmpleadoID, @Total);
+    
+    DECLARE @VentaID INT = SCOPE_IDENTITY();
 
-select *
-from supermercado.venta
-go
+    -- Insertar detalles desde XML
+    INSERT INTO Ventas.DetalleVentas (VentaID, ProductoID, Cantidad, Precio)
+    SELECT 
+        @VentaID,
+        Det.value('(ProductoID)[1]', 'INT'),
+        Det.value('(Cantidad)[1]', 'INT'),
+        Det.value('(Precio)[1]', 'DECIMAL(10, 2)')
+    FROM @DetalleVenta.nodes('/Detalles/Detalle') AS Det(Det);
+END;
+
+-- Procedimiento para registrar un empleado
+CREATE PROCEDURE InsertarEmpleado
+    @Nombre NVARCHAR(100),
+    @SucursalID INT,
+    @Email NVARCHAR(100)
+AS
+BEGIN
+    INSERT INTO Empleados.Empleados (Nombre, SucursalID, Email) 
+    VALUES (@Nombre, @SucursalID, @Email);
+END;
+
+-- ##### REPORTES #####
+-- Reporte mensual
+CREATE PROCEDURE ReporteMensual
+    @Mes INT,
+    @Anio INT
+AS
+BEGIN
+    SELECT 
+        DAY(Fecha) AS Dia,
+        SUM(Total) AS TotalFacturado
+    FROM Ventas.Ventas
+    WHERE MONTH(Fecha) = @Mes AND YEAR(Fecha) = @Anio
+    GROUP BY DAY(Fecha);
+END;
