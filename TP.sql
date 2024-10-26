@@ -79,7 +79,8 @@ CREATE TABLE Empleados.Empleado (
     Email NVARCHAR(100) NOT NULL,
 	EmailEmpresarial NVARCHAR(100) NOT NULL,
 	Cuil NVARCHAR(100) NOT NULL,
-	Cargo NVARCHAR(100) NOT NULL,--ver si es una tabla aparte
+    --cargo Cajero, Supervisor, Gerente de Sucursal
+	Cargo NVARCHAR(100) NOT NULL, --ver si es una tabla aparte
 	SucursalID INT,
 	--turno TM, TT, TN, Jornada Completa
 	Turno NVARCHAR(16) NOT NULL CHECK (Turno IN ('TM', 'TT', 'TN', 'Jornada Completa')),--ver si es una tabla aparte
@@ -88,6 +89,9 @@ CREATE TABLE Empleados.Empleado (
 	CONSTRAINT UQ_EmailEmpresarial UNIQUE (EmailEmpresarial)
 );
 go
+
+--Tabla Cargo
+
 --Tabla MedioDePago
 CREATE TABLE Ventas.MedioDePago (
 	MedioDePagoID INT PRIMARY KEY IDENTITY(1,1),
@@ -168,11 +172,14 @@ select * from Empleados.Empleado
 go
 
 
+
+--tabla para obtener el path del archivo .sql E:\Unlam\BaseDeDatosAplicada\2024-2C\TP\BDTP\TP.sql
+
+
 --Insertar datos de catalogo.csv from ../TP_integrador_Archivos\Productos\catalogo.csv
-drop table Catalogo.Catalogo
 
 BULK INSERT Catalogo.Catalogo
-FROM 'E:\Unlam\BaseDeDatosAplicada\2024-2C\TP\BDTP\TP_integrador_Archivos\Productos\catalogo.csv'
+FROM 'E:\Unlam\BaseDeDatosAplicada\2024-2C\TP\BDTP\TP_integrador_Archivos\Productos\catalogo.csv'  -- Ruta relativa
 WITH
 (
 	FORMAT = 'CSV',       -- Maneja automáticamente las comillas y delimitadores
@@ -181,6 +188,49 @@ WITH
 );
 go 
 select * from Catalogo.Catalogo
+GO
+--Stored procedure de insercion de csv
+CREATE OR ALTER PROCEDURE ImportarDesdeCSV
+    @Schema NVARCHAR(128),
+    @Tabla NVARCHAR(128),
+    @Ruta NVARCHAR(255)
+AS
+BEGIN
+    DECLARE @SQL NVARCHAR(MAX);
+
+    -- Construir la instrucción BULK INSERT
+    SET @SQL = 'BULK INSERT ' + QUOTENAME(@Schema) + '.' + QUOTENAME(@Tabla) + '
+                FROM ' + QUOTENAME(@Ruta, '''') + ' -- Ruta relativa
+                WITH
+                (
+                    FORMAT = ''CSV'',       -- Maneja automáticamente las comillas y delimitadores
+                    CODEPAGE = ''65001'',  -- UTF-8
+                    FIRSTROW = 2
+                );';
+
+    -- Ejecutar la instrucción SQL dinámica
+    EXEC sp_executesql @SQL;
+END;
+
+--VACIAR TABLA CATALOGO
+TRUNCATE TABLE Catalogo.Catalogo
+
+EXEC ImportarDesdeCSV 'Catalogo', 'Catalogo', 'E:\Unlam\BaseDeDatosAplicada\2024-2C\TP\BDTP\TP_integrador_Archivos\Productos\catalogo.csv';
+
+
+EXEC xp_cmdshell 'echo %CD%';
+
+
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'xp_cmdshell', 1;
+RECONFIGURE;
+EXEC sp_configure 'xp_cmdshell';
+
+EXEC xp_cmdshell 'cd';
+
+
+
 /*
 -- ##### STORED PROCEDURES #####
 -- Procedimiento para insertar una nueva venta
