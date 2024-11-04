@@ -6,11 +6,15 @@
 		-Aguilera Emanuel, 41757402
 		-Tatiana Greve, 43031180
 		-Nogueira Denise, 41234014
-
+	Fecha: 5/11/24
 */
 
 /*
-Entrega 3
+use master
+drop database Com2900G12
+*/
+
+/* Entrega 3
 Luego de decidirse por un motor de base de datos relacional, llegó el momento de generar la
 base de datos.
 Deberá instalar el DMBS y documentar el proceso. No incluya capturas de pantalla. Detalle
@@ -27,51 +31,196 @@ en la creación de objetos. NO use el esquema “dbo”.
 El archivo .sql con el script debe incluir comentarios donde consten este enunciado, la fecha
 de entrega, número de grupo, nombre de la materia, nombres y DNI de los alumnos.
 Entregar todo en un zip cuyo nombre sea Grupo_XX.zip mediante la sección de prácticas de
-MIEL. Solo uno de los miembros del grupo debe hacer la entrega.
-*/
-/*
-use master
+MIEL. Solo uno de los miembros del grupo debe hacer la entrega. */
 
-drop database Com2900G12
-*/
-create database Com2900G12
-go
+CREATE DATABASE Com2900G12
+GO
 
-use Com2900G12
-go
+USE Com2900G12
+GO
 
--- ##### TABLAS #####
 -- Creación de esquemas
 CREATE SCHEMA Ventas;
-go
-CREATE SCHEMA Catalogo;
-go
+GO
+CREATE SCHEMA Productos;
+GO
 CREATE SCHEMA Empleados;
-go
+GO
 
+-- ##### TABLAS #####
 -- Tabla de sucursales
 CREATE TABLE Ventas.Sucursal (
     SucursalID INT PRIMARY KEY IDENTITY(1,1),
-	Localidad NVARCHAR(100) NOT NULL, --ejemplo Sanjusto, Provincia de Buenos Aires
-	--codigo postal con check A1111
-	CodigoPostal NVARCHAR(5) NOT NULL CHECK (CodigoPostal LIKE '[A-Z][0-9][0-9][0-9][0-9]'),	
-	Direccion NVARCHAR(100) NOT NULL, --av geral paz 1234
-	--telefono con check  1111-1111
-	Telefono NVARCHAR(9) NOT NULL CHECK (Telefono LIKE '[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+	Ciudad VARCHAR(100) NOT NULL, 
+	Direccion VARCHAR(150) NOT NULL,
+	Telefono CHAR(9) NOT NULL CHECK (Telefono LIKE '[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+	CONSTRAINT UQ_Direccion UNIQUE (Direccion),
+	CONSTRAINT UQ_Telefono UNIQUE (Telefono) -- 2 sucursales prodrian estar en la misma ciudad, pero no con la misma direccion o telefono
 );
-go
+GO
 
-insert into Ventas.Sucursal (Localidad,CodigoPostal,Direccion,Telefono) values ('San Justo','B1754','Av. Brig. Gral. Juan Manuel de Rosas 3634','5555-5551'),
-																			('Ramos Mejia','B1704','Av. de Mayo 791','5555-5552'),
-																			('Lomas del Mirador','B1753',' Pres. Juan Domingo Perón 763','5555-5553')
-go
+-- Tabla de empleados
+CREATE TABLE Empleados.Empleado (
+    EmpleadoID INT PRIMARY KEY IDENTITY(257020,1),
+    Nombre VARCHAR(75) NOT NULL,
+	Apellido VARCHAR(75) NOT NULL,
+	Dni int NOT NULL CHECK (Dni BETWEEN 10000000 AND 99999999),
+	Direccion VARCHAR(150) NOT NULL,
+    Email VARCHAR(100) NOT NULL,
+	EmailEmpresarial VARCHAR(100) NOT NULL,
+	Cuil CHAR(13) NOT NULL,
+	Cargo VARCHAR(50) NOT NULL, --ver si es una tabla aparte
+	SucursalID INT,
+	Turno VARCHAR(16) NOT NULL CHECK (Turno IN ('TM', 'TT', 'Jornada Completa')),
+    CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursal(SucursalID),
+    CONSTRAINT UQ_Email UNIQUE (Email),
+	CONSTRAINT UQ_EmailEmpresarial UNIQUE (EmailEmpresarial)
+);
+GO
 
+-- Tabla de catalogo
+CREATE TABLE Productos.Catalogo (
+    ProductoID INT PRIMARY KEY IDENTITY(1,1),
+    LineaDeProducto VARCHAR(100) NOT NULL,
+    Nombre VARCHAR(100) NOT NULL,
+    Precio DECIMAL(10, 2) NOT NULL,
+    PrecioReferencial DECIMAL(10, 2) NOT NULL,
+    UnidadDeReferencia CHAR(2) NOT NULL,
+    Fecha DATETIME DEFAULT GETDATE()
+);
+GO
+
+-- Tabla de accesorios electronicos
+CREATE TABLE Productos.AccesorioElectronico (
+	AElectronicoID INT PRIMARY KEY IDENTITY(1,1),
+	Nombre VARCHAR(100) NOT NULL,
+	PrecioEnDolares DECIMAL(7,2) NOT NULL -- Luego si se vende se debe transformar a pesos
+);
+GO
+
+-- Tabla de productos importados
+CREATE TABLE Productos.ProductoImportado (
+	PImportadoID INT PRIMARY KEY IDENTITY(1,1),
+	Nombre VARCHAR(100) NOT NULL,
+	Proveedor VARCHAR(100) NOT NULL, -- Quizas se puede omitir
+	LineaDeProducto VARCHAR(100) NOT NULL,
+	--Cantidad INT, La omitimos ya que no nos importa la administracion de stock de los productos
+	Precio DECIMAL(7,2) NOT NULL
+);
+GO
+
+-- Tabla de ventas
+CREATE TABLE Ventas.Venta (
+    VentaID VARCHAR(100) PRIMARY KEY CHECK (VentaID LIKE '[0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]'), 
+	TipoDeFactura CHAR(1) NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
+	Ciudad VARCHAR(100) NOT NULL, --ciudad si es Yangon reemplazar por San Justo, etc
+	TipoDeCliente VARCHAR(100) NOT NULL, --ver si es una tabla aparte
+	Genero VARCHAR(6) NOT NULL,
+	Producto VARCHAR(100),
+	PrecioUnitario DECIMAL(10, 2) NOT NULL,
+	Cantidad INT NOT NULL,
+    Fecha DATE NOT NULL DEFAULT GETDATE(),--Date tiene formato YYYY-MM-DD
+	Hora TIME NOT NULL,
+	MedioDePago VARCHAR(25),
+	EmpleadoID INT,
+	IdentificadorDePago VARCHAR(50),
+    CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Empleados.Empleado(EmpleadoID),
+	--MedioDePagoID INT,
+	--CONSTRAINT FK_MedioDePago FOREIGN KEY (MedioDePagoID) REFERENCES Ventas.MedioDePago(MedioDePagoID) Revisar si usar la tabla MedioDePago
+);
+GO
+
+--##### INSERCIONES #####
+CREATE PROCEDURE Ventas.InsertarSucursal
+    @Ciudad VARCHAR(100),
+    @Direccion VARCHAR(150),
+    @Telefono CHAR(9)
+AS
+BEGIN
+    INSERT INTO Ventas.Sucursal (Ciudad, Direccion, Telefono)
+    VALUES (@Ciudad, @Direccion, @Telefono);
+END;
+GO
+
+CREATE PROCEDURE Empleados.InsertarEmpleado
+    @Nombre VARCHAR(75),
+    @Apellido VARCHAR(75),
+    @Dni INT,
+    @Direccion VARCHAR(150),
+    @Email VARCHAR(100),
+    @EmailEmpresarial VARCHAR(100),
+    @Cuil CHAR(13),
+    @Cargo VARCHAR(50),
+    @SucursalID INT,
+    @Turno VARCHAR(16)
+AS
+BEGIN
+    INSERT INTO Empleados.Empleado (Nombre, Apellido, Dni, Direccion, Email, EmailEmpresarial, Cuil, Cargo, SucursalID, Turno)
+    VALUES (@Nombre, @Apellido, @Dni, @Direccion, @Email, @EmailEmpresarial, @Cuil, @Cargo, @SucursalID, @Turno);
+END;
+GO
+
+CREATE PROCEDURE Productos.InsertarCatalogo
+    @LineaDeProducto VARCHAR(100),
+    @Nombre VARCHAR(100),
+    @Precio DECIMAL(10, 2),
+    @PrecioReferencial DECIMAL(10, 2),
+    @UnidadDeReferencia CHAR(2)
+AS
+BEGIN
+    INSERT INTO Productos.Catalogo (LineaDeProducto, Nombre, Precio, PrecioReferencial, UnidadDeReferencia)
+    VALUES (@LineaDeProducto, @Nombre, @Precio, @PrecioReferencial, @UnidadDeReferencia);
+END;
+GO
+
+CREATE PROCEDURE Productos.InsertarAccesorioElectronico
+    @Nombre VARCHAR(100),
+    @PrecioEnDolares DECIMAL(7, 2)
+AS
+BEGIN
+    INSERT INTO Productos.AccesorioElectronico (Nombre, PrecioEnDolares)
+    VALUES (@Nombre, @PrecioEnDolares);
+END;
+GO
+
+CREATE PROCEDURE Productos.InsertarProductoImportado
+    @Nombre VARCHAR(100),
+    @Proveedor VARCHAR(100),
+    @LineaDeProducto VARCHAR(100),
+    @Precio DECIMAL(7, 2)
+AS
+BEGIN
+    INSERT INTO Productos.ProductoImportado (Nombre, Proveedor, LineaDeProducto, Precio)
+    VALUES (@Nombre, @Proveedor, @LineaDeProducto, @Precio);
+END;
+GO
+
+CREATE PROCEDURE Ventas.InsertarVenta
+    @VentaID VARCHAR(100),
+    @TipoDeFactura CHAR(1),
+    @Ciudad VARCHAR(100),
+    @TipoDeCliente VARCHAR(100),
+    @Genero VARCHAR(6),
+    @Producto VARCHAR(100),
+    @PrecioUnitario DECIMAL(10, 2),
+    @Cantidad INT,
+    @Hora TIME,
+    @MedioDePago VARCHAR(25),
+    @EmpleadoID INT,
+    @IdentificadorDePago VARCHAR(50)
+AS
+BEGIN
+    INSERT INTO Ventas.Venta (VentaID, TipoDeFactura, Ciudad, TipoDeCliente, Genero, Producto, PrecioUnitario, Cantidad, Hora, MedioDePago, EmpleadoID, IdentificadorDePago)
+    VALUES (@VentaID, @TipoDeFactura, @Ciudad, @TipoDeCliente, @Genero, @Producto, @PrecioUnitario, @Cantidad, @Hora, @MedioDePago, @EmpleadoID, @IdentificadorDePago);
+END;
+GO
+
+--##### MODIFICACIONES #####
 CREATE PROCEDURE Ventas.ActualizarSucursal
     @SucursalID INT,
-    @Localidad NVARCHAR(100) = NULL,
-    @CodigoPostal NVARCHAR(5) = NULL,
-    @Direccion NVARCHAR(100) = NULL,
-    @Telefono NVARCHAR(9) = NULL
+    @Ciudad VARCHAR(100) = NULL,
+    @Direccion VARCHAR(150) = NULL,
+    @Telefono CHAR(9) = NULL
 AS
 BEGIN
 	-- Verificar si la sucursal existe
@@ -80,28 +229,161 @@ BEGIN
         RAISERROR('Sucursal no encontrada.', 16, 1);
         RETURN;
     END
-
-	UPDATE Ventas.Sucursal
-    SET
-        Localidad = COALESCE(@Localidad, Localidad),
-        CodigoPostal = COALESCE(@CodigoPostal, CodigoPostal),
+    UPDATE Ventas.Sucursal
+    SET 
+        Ciudad = COALESCE(@Ciudad, Ciudad),
         Direccion = COALESCE(@Direccion, Direccion),
         Telefono = COALESCE(@Telefono, Telefono)
     WHERE SucursalID = @SucursalID;
 END;
-go
+GO
 
-CREATE PROCEDURE Ventas.InsertarSucursal
-    @Localidad NVARCHAR(100),
-    @CodigoPostal NVARCHAR(5),
-    @Direccion NVARCHAR(100),
-    @Telefono NVARCHAR(9)
+CREATE PROCEDURE Empleados.ActualizarEmpleado
+    @EmpleadoID INT,
+    @Nombre VARCHAR(75) = NULL,
+    @Apellido VARCHAR(75) = NULL,
+    @Dni INT = NULL,
+    @Direccion VARCHAR(150) = NULL,
+    @Email VARCHAR(100) = NULL,
+    @EmailEmpresarial VARCHAR(100) = NULL,
+    @Cuil CHAR(13) = NULL,
+    @Cargo VARCHAR(50) = NULL,
+    @SucursalID INT = NULL,
+    @Turno VARCHAR(16) = NULL
 AS
 BEGIN
-	INSERT INTO Ventas.Sucursal (Localidad, CodigoPostal, Direccion, Telefono)
-    VALUES (@Localidad, @CodigoPostal, @Direccion, @Telefono);
+    -- Verificar si el empleado existe
+    IF NOT EXISTS (SELECT 1 FROM Empleados.Empleado WHERE EmpleadoID = @EmpleadoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    UPDATE Empleados.Empleado
+    SET 
+        Nombre = COALESCE(@Nombre, Nombre),
+        Apellido = COALESCE(@Apellido, Apellido),
+        Dni = COALESCE(@Dni, Dni),
+        Direccion = COALESCE(@Direccion, Direccion),
+        Email = COALESCE(@Email, Email),
+        EmailEmpresarial = COALESCE(@EmailEmpresarial, EmailEmpresarial),
+        Cuil = COALESCE(@Cuil, Cuil),
+        Cargo = COALESCE(@Cargo, Cargo),
+        SucursalID = COALESCE(@SucursalID, SucursalID),
+        Turno = COALESCE(@Turno, Turno)
+    WHERE EmpleadoID = @EmpleadoID;
 END;
-go
+GO
+
+CREATE PROCEDURE Productos.ActualizarCatalogo
+    @ProductoID INT,
+    @LineaDeProducto VARCHAR(100) = NULL,
+    @Nombre VARCHAR(100) = NULL,
+    @Precio DECIMAL(10, 2) = NULL,
+    @PrecioReferencial DECIMAL(10, 2) = NULL,
+    @UnidadDeReferencia VARCHAR(100) = NULL
+AS
+BEGIN
+    -- Verificar si el catalogo existe
+    IF NOT EXISTS (SELECT 1 FROM Productos.Catalogo WHERE ProductoID = @ProductoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    UPDATE Productos.Catalogo
+    SET 
+        LineaDeProducto = COALESCE(@LineaDeProducto, LineaDeProducto),
+        Nombre = COALESCE(@Nombre, Nombre),
+        Precio = COALESCE(@Precio, Precio),
+        PrecioReferencial = COALESCE(@PrecioReferencial, PrecioReferencial),
+        UnidadDeReferencia = COALESCE(@UnidadDeReferencia, UnidadDeReferencia)
+    WHERE ProductoID = @ProductoID;
+END;
+GO
+
+CREATE PROCEDURE Productos.ActualizarAccesorioElectronico
+    @AElectronicoID INT,
+    @Nombre VARCHAR(100) = NULL,
+    @PrecioEnDolares DECIMAL(7, 2) = NULL
+AS
+BEGIN
+    -- Verificar si el accesorio electronico existe
+    IF NOT EXISTS (SELECT 1 FROM Productos.AccesorioElectronico WHERE AElectronicoID = @AElectronicoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    UPDATE Productos.AccesorioElectronico
+    SET 
+        Nombre = COALESCE(@Nombre, Nombre),
+        PrecioEnDolares = COALESCE(@PrecioEnDolares, PrecioEnDolares)
+    WHERE AElectronicoID = @AElectronicoID;
+END;
+GO
+
+CREATE PROCEDURE Productos.ActualizarProductoImportado
+    @PImportadoID INT,
+    @Nombre VARCHAR(100) = NULL,
+    @Proveedor VARCHAR(100) = NULL,
+    @LineaDeProducto VARCHAR(100) = NULL,
+    @Precio DECIMAL(7, 2) = NULL
+AS
+BEGIN
+    -- Verificar si el producto importado existe
+    IF NOT EXISTS (SELECT 1 FROM Productos.ProductoImportado WHERE PImportadoID = @PImportadoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    UPDATE Productos.ProductoImportado
+    SET 
+        Nombre = COALESCE(@Nombre, Nombre),
+        Proveedor = COALESCE(@Proveedor, Proveedor),
+        LineaDeProducto = COALESCE(@LineaDeProducto, LineaDeProducto),
+        Precio = COALESCE(@Precio, Precio)
+    WHERE PImportadoID = @PImportadoID;
+END;
+GO
+
+CREATE PROCEDURE Ventas.ActualizarVenta
+    @VentaID VARCHAR(100),
+    @TipoDeFactura CHAR(1) = NULL,
+    @Ciudad VARCHAR(100) = NULL,
+    @TipoDeCliente VARCHAR(100) = NULL,
+    @Genero VARCHAR(6) = NULL,
+    @Producto VARCHAR(100) = NULL,
+    @PrecioUnitario DECIMAL(10, 2) = NULL,
+    @Cantidad INT = NULL,
+    @Hora TIME = NULL,
+    @MedioDePago VARCHAR(25) = NULL,
+    @EmpleadoID INT = NULL,
+    @IdentificadorDePago VARCHAR(50) = NULL
+AS
+BEGIN
+    -- Verificar si la venta existe
+    IF NOT EXISTS (SELECT 1 FROM Ventas.Venta WHERE VentaID = @VentaID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    UPDATE Ventas.Venta
+    SET 
+        TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
+        Ciudad = COALESCE(@Ciudad, Ciudad),
+        TipoDeCliente = COALESCE(@TipoDeCliente, TipoDeCliente),
+        Genero = COALESCE(@Genero, Genero),
+        Producto = COALESCE(@Producto, Producto),
+        PrecioUnitario = COALESCE(@PrecioUnitario, PrecioUnitario),
+        Cantidad = COALESCE(@Cantidad, Cantidad),
+        Hora = COALESCE(@Hora, Hora),
+        MedioDePago = COALESCE(@MedioDePago, MedioDePago),
+        EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
+        IdentificadorDePago = COALESCE(@IdentificadorDePago, IdentificadorDePago)
+    WHERE VentaID = @VentaID;
+END;
+GO
+
+
+--##### BORRADOS #####
 
 CREATE PROCEDURE Ventas.EliminarSucursal
     @SucursalID INT
@@ -113,101 +395,10 @@ BEGIN
         RAISERROR('Sucursal no encontrada.', 16, 1);
         RETURN;
     END
-
     DELETE FROM Ventas.Sucursal
     WHERE SucursalID = @SucursalID;
 END;
-go
-
--- Tabla de empleados
-CREATE TABLE Empleados.Empleado (
-    EmpleadoID INT PRIMARY KEY IDENTITY(257020,1),
-    Nombre NVARCHAR(100) NOT NULL,
-	Apellido NVARCHAR(100) NOT NULL,
-	--dni con check 11111111 98999999
-	Dni int NOT NULL CHECK (Dni BETWEEN 10000000 AND 99999999),
-
-	Localidad NVARCHAR(100) NOT NULL, --ejemplo Sanjusto, Provincia de Buenos Aires
-	--codigo postal con check A1111
-	CodigoPostal NVARCHAR(5) NOT NULL CHECK (CodigoPostal LIKE '[A-Z][0-9][0-9][0-9][0-9]'),	
-	Direccion NVARCHAR(100) NOT NULL, --av geral paz 1234
-
-    Email NVARCHAR(100) NOT NULL,
-	EmailEmpresarial NVARCHAR(100) NOT NULL,
-	Cuil NVARCHAR(100) NOT NULL,
-    --cargo Cajero, Supervisor, Gerente de Sucursal
-	Cargo NVARCHAR(100) NOT NULL, --ver si es una tabla aparte
-	SucursalID INT,
-	--turno TM, TT, TN, Jornada Completa
-	Turno NVARCHAR(16) NOT NULL CHECK (Turno IN ('TM', 'TT', 'TN', 'Jornada Completa')),--ver si es una tabla aparte
-    CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursal(SucursalID),
-    CONSTRAINT UQ_Email UNIQUE (Email),
-	CONSTRAINT UQ_EmailEmpresarial UNIQUE (EmailEmpresarial)
-);
-go
-
-
-CREATE PROCEDURE Empleados.InsertarEmpleado
-    @Nombre NVARCHAR(100),
-    @Apellido NVARCHAR(100),
-    @Dni INT,
-    @Localidad NVARCHAR(100),
-    @CodigoPostal NVARCHAR(5),
-    @Direccion NVARCHAR(100),
-    @Email NVARCHAR(100),
-    @EmailEmpresarial NVARCHAR(100),
-    @Cuil NVARCHAR(100),
-    @Cargo NVARCHAR(100),
-    @SucursalID INT,
-    @Turno NVARCHAR(16)
-AS
-BEGIN
-    INSERT INTO Empleados.Empleado (Nombre, Apellido, Dni, Localidad, CodigoPostal, Direccion, Email, EmailEmpresarial, Cuil, Cargo, SucursalID, Turno)
-    VALUES (@Nombre, @Apellido, @Dni, @Localidad, @CodigoPostal, @Direccion, @Email, @EmailEmpresarial, @Cuil, @Cargo, @SucursalID, @Turno);
-END;
-go
-
-CREATE PROCEDURE Empleados.ActualizarEmpleado
-    @EmpleadoID INT,
-    @Nombre NVARCHAR(100) = NULL,
-    @Apellido NVARCHAR(100) = NULL,
-    @Dni INT = NULL,
-    @Localidad NVARCHAR(100) = NULL,
-    @CodigoPostal NVARCHAR(5) = NULL,
-    @Direccion NVARCHAR(100) = NULL,
-    @Email NVARCHAR(100) = NULL,
-    @EmailEmpresarial NVARCHAR(100) = NULL,
-    @Cuil NVARCHAR(100) = NULL,
-    @Cargo NVARCHAR(100) = NULL,
-    @SucursalID INT = NULL,
-    @Turno NVARCHAR(16) = NULL
-AS
-BEGIN
-    -- Verificar si el empleado existe
-    IF NOT EXISTS (SELECT 1 FROM Empleados.Empleado WHERE EmpleadoID = @EmpleadoID)
-    BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
-        RETURN;
-    END
-
-    -- Actualizar los campos solo si se proporciona un valor
-    UPDATE Empleados.Empleado
-    SET
-        Nombre = COALESCE(@Nombre, Nombre),
-        Apellido = COALESCE(@Apellido, Apellido),
-        Dni = COALESCE(@Dni, Dni),
-        Localidad = COALESCE(@Localidad, Localidad),
-        CodigoPostal = COALESCE(@CodigoPostal, CodigoPostal),
-        Direccion = COALESCE(@Direccion, Direccion),
-        Email = COALESCE(@Email, Email),
-        EmailEmpresarial = COALESCE(@EmailEmpresarial, EmailEmpresarial),
-        Cuil = COALESCE(@Cuil, Cuil),
-        Cargo = COALESCE(@Cargo, Cargo),
-        SucursalID = COALESCE(@SucursalID, SucursalID),
-        Turno = COALESCE(@Turno, Turno)
-    WHERE EmpleadoID = @EmpleadoID;
-END;
-go
+GO
 
 CREATE PROCEDURE Empleados.EliminarEmpleado
     @EmpleadoID INT
@@ -219,19 +410,166 @@ BEGIN
         RAISERROR('Empleado no encontrado.', 16, 1);
         RETURN;
     END
-
     DELETE FROM Empleados.Empleado
     WHERE EmpleadoID = @EmpleadoID;
 END;
-go
+GO
+
+CREATE PROCEDURE Productos.EliminarCatalogo
+    @ProductoID INT
+AS
+BEGIN
+    -- Verificar si el catalogo existe
+    IF NOT EXISTS (SELECT 1 FROM Productos.Catalogo WHERE ProductoID = @ProductoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    DELETE FROM Productos.Catalogo
+    WHERE ProductoID = @ProductoID;
+END;
+GO
+
+CREATE PROCEDURE Productos.EliminarAccesorioElectronico
+    @AElectronicoID INT
+AS
+BEGIN
+    -- Verificar si el accesorio electronico existe
+    IF NOT EXISTS (SELECT 1 FROM Productos.AccesorioElectronico WHERE AElectronicoID = @AElectronicoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    DELETE FROM Productos.AccesorioElectronico
+    WHERE AElectronicoID = @AElectronicoID;
+END;
+GO
+
+CREATE PROCEDURE Productos.EliminarProductoImportado
+    @PImportadoID INT
+AS
+BEGIN
+    -- Verificar si el producto importado existe
+    IF NOT EXISTS (SELECT 1 FROM Productos.ProductoImportado WHERE PImportadoID = @PImportadoID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    DELETE FROM Productos.ProductoImportado
+    WHERE PImportadoID = @PImportadoID;
+END;
+GO
+
+CREATE PROCEDURE Ventas.EliminarVenta
+    @VentaID VARCHAR(100)
+AS
+BEGIN
+    -- Verificar si la venta existe
+    IF NOT EXISTS (SELECT 1 FROM Ventas.Venta WHERE VentaID = @VentaID)
+    BEGIN
+        RAISERROR('Empleado no encontrado.', 16, 1);
+        RETURN;
+    END
+    DELETE FROM Ventas.Venta
+    WHERE VentaID = @VentaID;
+END;
+GO
+
+-- ##### PRUEBAS DE INSERCION #####
+/*
+select * from Ventas.Sucursal
+select * from Empleados.Empleado
+select * from Productos.Catalogo
+select * from Productos.AccesorioElectronico
+select * from Productos.ProductoImportado
+select * from Ventas.Venta 
+
+EXEC Ventas.InsertarSucursal 
+    @Ciudad = 'Moron', 
+    @Direccion = 'Carlos Calvo 3344', 
+    @Telefono = '1234-6789';
+
+EXEC Empleados.InsertarEmpleado 
+    @Nombre = 'Juan', 
+    @Apellido = 'Pérez', 
+    @Dni = 12345678, 
+    @Direccion = 'Av. Libertador 1000', 
+    @Email = 'juan.perez@example.com', 
+    @EmailEmpresarial = 'juan.perez@empresa.com', 
+    @Cuil = '20-12345678-9', 
+    @Cargo = 'Desarrollador', 
+    @SucursalID = 1, 
+    @Turno = 'TM';
+
+EXEC Productos.InsertarCatalogo 
+    @LineaDeProducto = 'Electrónica', 
+    @Nombre = 'Smartphone XYZ', 
+    @Precio = 499.99, 
+    @PrecioReferencial = 599.99, 
+    @UnidadDeReferencia = 'KG';
+
+EXEC Productos.InsertarAccesorioElectronico 
+    @Nombre = 'Cargador Rápido', 
+    @PrecioEnDolares = 29.99;
+
+EXEC Productos.InsertarProductoImportado 
+    @Nombre = 'Laptop XYZ', 
+    @Proveedor = 'Proveedor ABC', 
+    @LineaDeProducto = 'Computación', 
+    @Precio = 799.99;
+
+EXEC Ventas.InsertarVenta 
+    @VentaID = '001-02-5678', 
+    @TipoDeFactura = 'A', 
+    @Ciudad = 'San Justo', 
+    @TipoDeCliente = 'Regular', 
+    @Genero = 'Masculino', 
+    @Producto = 'Smartphone XYZ', 
+    @PrecioUnitario = 499.99, 
+    @Cantidad = 1, 
+    @Hora = '14:30:00', 
+    @MedioDePago = 'Tarjeta', 
+    @EmpleadoID = 257020, 
+    @IdentificadorDePago = 'Pago123';
+
+EXEC Ventas.ActualizarSucursal 
+    @SucursalID = 1, 
+    @Ciudad = 'Buenos Aires', 
+    @Direccion = 'Av. Corrientes 1234', 
+    @Telefono = '123-456789';
+*/
+
+--##### PRUEBAS DE ELIMINACION #####
+/*
+EXEC Ventas.EliminarVenta @VentaID='001-02-5678'
+EXEC Empleados.EliminarEmpleado @EmpleadoID=257020
+*/
+
+--##### PRUEBAS DE ACTUALIZACION #####
+/*
+EXEC Productos.ActualizarAccesorioElectronico @AElectronicoID=1, @PrecioEnDolares=14.99
+EXEC Productos.ActualizarProductoImportado @PImportadoID=1, @Nombre='Laptop ABC'
+¨*/
+
+
+
+
+
+
+
+-- COSAS DE OTRAS ENTREGAS / PARA AGREGAR O CAMBIAR
 
 --Tabla MedioDePago
+/*
 CREATE TABLE Ventas.MedioDePago (
 	MedioDePagoID INT PRIMARY KEY IDENTITY(1,1),
-	Nombre NVARCHAR(100) NOT NULL
+	Nombre NVARCHAR(100) NOT NULL,
+	Identificador VARCHAR(50) DEFAULT NULL
 );
-go
+GO*/
 
+
+/*
 CREATE PROCEDURE Ventas.InsertarMedioDePago
     @Nombre NVARCHAR(100)
 AS
@@ -274,256 +612,7 @@ BEGIN
     DELETE FROM Ventas.MedioDePago
     WHERE MedioDePagoID = @MedioDePagoID;
 END;
-go
-
--- Tabla de productos
-CREATE TABLE Catalogo.Producto (
-    ProductoID INT PRIMARY KEY IDENTITY(1,1),
-	LineaDeProducto NVARCHAR(100) NOT NULL,--ver si es una tabla aparte
-    Nombre NVARCHAR(100) NOT NULL,
-    Precio DECIMAL(10, 2) NOT NULL,
-	PrecioReferencial DECIMAL(10, 2),
-	UnidadDeReferencia NVARCHAR(2),
-    SucursalID INT,
-    CONSTRAINT FK_Producto_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursal(SucursalID)
-);
-go
-
-CREATE PROCEDURE Catalogo.InsertarProducto
-    @LineaDeProducto NVARCHAR(100),
-    @Nombre NVARCHAR(100),
-    @Precio DECIMAL(10, 2),
-    @PrecioReferencial DECIMAL(10, 2) = NULL,
-    @UnidadDeReferencia NVARCHAR(2) = NULL,
-    @SucursalID INT
-AS
-BEGIN
-    INSERT INTO Catalogo.Producto (LineaDeProducto, Nombre, Precio, PrecioReferencial, UnidadDeReferencia, SucursalID)
-    VALUES (@LineaDeProducto, @Nombre, @Precio, @PrecioReferencial, @UnidadDeReferencia, @SucursalID);
-END;
-go
-
-CREATE PROCEDURE Catalogo.ActualizarProducto
-    @ProductoID INT,
-    @LineaDeProducto NVARCHAR(100) = NULL,
-    @Nombre NVARCHAR(100) = NULL,
-    @Precio DECIMAL(10, 2) = NULL,
-    @PrecioReferencial DECIMAL(10, 2) = NULL,
-    @UnidadDeReferencia NVARCHAR(2) = NULL,
-    @SucursalID INT = NULL
-AS
-BEGIN
-    -- Verificar si el producto existe
-    IF NOT EXISTS (SELECT 1 FROM Catalogo.Producto WHERE ProductoID = @ProductoID)
-    BEGIN
-        RAISERROR('Producto no encontrado.', 16, 1);
-        RETURN;
-    END
-
-    -- Actualizar los campos solo si se proporciona un valor
-    UPDATE Catalogo.Producto
-    SET
-        LineaDeProducto = COALESCE(@LineaDeProducto, LineaDeProducto),
-        Nombre = COALESCE(@Nombre, Nombre),
-        Precio = COALESCE(@Precio, Precio),
-        PrecioReferencial = COALESCE(@PrecioReferencial, PrecioReferencial),
-        UnidadDeReferencia = COALESCE(@UnidadDeReferencia, UnidadDeReferencia),
-        SucursalID = COALESCE(@SucursalID, SucursalID)
-    WHERE ProductoID = @ProductoID;
-END;
-go
-
-CREATE PROCEDURE Catalogo.EliminarProducto
-    @ProductoID INT
-AS
-BEGIN
-    -- Verificar si el producto existe
-    IF NOT EXISTS (SELECT 1 FROM Catalogo.Producto WHERE ProductoID = @ProductoID)
-    BEGIN
-        RAISERROR('Producto no encontrado.', 16, 1);
-        RETURN;
-    END
-
-    DELETE FROM Catalogo.Producto
-    WHERE ProductoID = @ProductoID;
-END;
-go
-
-CREATE TABLE Catalogo.Catalogo (
-    ProductoID INT PRIMARY KEY,
-    LineaDeProducto NVARCHAR(100) NOT NULL,
-    Nombre NVARCHAR(100) NOT NULL,
-    Precio DECIMAL(10, 2) NOT NULL,  -- Cambiar a DECIMAL
-    PrecioReferencial DECIMAL(10, 2), -- Cambiar a DECIMAL
-    UnidadDeReferencia NVARCHAR(100),
-    Fecha DATETIME
-);
-go
-
-CREATE PROCEDURE Catalogo.InsertarCatalogo
-    @ProductoID INT,
-    @LineaDeProducto NVARCHAR(100),
-    @Nombre NVARCHAR(100),
-    @Precio DECIMAL(10, 2),
-    @PrecioReferencial DECIMAL(10, 2) = NULL,
-    @UnidadDeReferencia NVARCHAR(100),
-    @Fecha DATETIME
-AS
-BEGIN
-    INSERT INTO Catalogo.Catalogo (ProductoID, LineaDeProducto, Nombre, Precio, PrecioReferencial, UnidadDeReferencia, Fecha)
-    VALUES (@ProductoID, @LineaDeProducto, @Nombre, @Precio, @PrecioReferencial, @UnidadDeReferencia, @Fecha);
-END;
-GO
-
-CREATE PROCEDURE Catalogo.ActualizarCatalogo
-    @ProductoID INT,
-    @LineaDeProducto NVARCHAR(100) = NULL,
-    @Nombre NVARCHAR(100) = NULL,
-    @Precio DECIMAL(10, 2) = NULL,
-    @PrecioReferencial DECIMAL(10, 2) = NULL,
-    @UnidadDeReferencia NVARCHAR(100) = NULL,
-    @Fecha DATETIME = NULL
-AS
-BEGIN
-    -- Verificar si el producto existe
-    IF NOT EXISTS (SELECT 1 FROM Catalogo.Catalogo WHERE ProductoID = @ProductoID)
-    BEGIN
-        RAISERROR('Producto no encontrado en el catálogo.', 16, 1);
-        RETURN;
-    END
-
-    -- Actualizar los campos solo si se proporciona un valor
-    UPDATE Catalogo.Catalogo
-    SET
-        LineaDeProducto = COALESCE(@LineaDeProducto, LineaDeProducto),
-        Nombre = COALESCE(@Nombre, Nombre),
-        Precio = COALESCE(@Precio, Precio),
-        PrecioReferencial = COALESCE(@PrecioReferencial, PrecioReferencial),
-        UnidadDeReferencia = COALESCE(@UnidadDeReferencia, UnidadDeReferencia),
-        Fecha = COALESCE(@Fecha, Fecha)
-    WHERE ProductoID = @ProductoID;
-END;
-GO
-
-CREATE PROCEDURE Catalogo.EliminarCatalogo
-    @ProductoID INT
-AS
-BEGIN
-    -- Verificar si el producto existe
-    IF NOT EXISTS (SELECT 1 FROM Catalogo.Catalogo WHERE ProductoID = @ProductoID)
-    BEGIN
-        RAISERROR('Producto no encontrado en el catálogo.', 16, 1);
-        RETURN;
-    END
-
-    DELETE FROM Catalogo.Catalogo
-    WHERE ProductoID = @ProductoID;
-END;
-GO
-
--- Tabla de ventas
-CREATE TABLE Ventas.Venta (
-	--ventaId 750-67-8428
-    VentaID NVARCHAR(100) PRIMARY KEY CHECK (VentaID LIKE '[0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]'), 
-	--TipoDeFactura A, B, C
-	TipoDeFactura NVARCHAR(1) NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
-	--ciudad si es Yangon reemplazar por San Justo
-	Ciudad NVARCHAR(100) NOT NULL,
-	TipoDeCliente NVARCHAR(100) NOT NULL, --ver si es una tabla aparte
-	Genero NVARCHAR(6) NOT NULL,
-	ProductoID INT,
-	PrecioUnitario DECIMAL(10, 2) NOT NULL,
-	Cantidad INT NOT NULL,
-    Fecha DATE NOT NULL DEFAULT GETDATE(),--Date tiene formato YYYY-MM-DD
-	Hora TIME NOT NULL,
-	MedioDePagoID INT,
-	IdentificadorDePago NVARCHAR(100) NOT NULL, --cvu / tarjeta de credito / efectivo --
-	EmpleadoID INT,
-    Total DECIMAL(10, 2),
-    CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Empleados.Empleado(EmpleadoID),
-	CONSTRAINT FK_Nombre_Producto FOREIGN KEY (ProductoID) REFERENCES Catalogo.Producto(ProductoID),
-	CONSTRAINT FK_MedioDePago FOREIGN KEY (MedioDePagoID) REFERENCES Ventas.MedioDePago(MedioDePagoID)
-);
-go
-
-CREATE PROCEDURE Ventas.InsertarVenta
-    @VentaID NVARCHAR(100),
-    @TipoDeFactura NVARCHAR(1),
-    @Ciudad NVARCHAR(100),
-    @TipoDeCliente NVARCHAR(100),
-    @Genero NVARCHAR(6),
-    @ProductoID INT,
-    @PrecioUnitario DECIMAL(10, 2),
-    @Cantidad INT,
-    @Hora TIME,
-    @MedioDePagoID INT,
-    @IdentificadorDePago NVARCHAR(100),
-    @EmpleadoID INT,
-    @Total DECIMAL(10, 2)
-AS
-BEGIN
-    INSERT INTO Ventas.Venta (VentaID, TipoDeFactura, Ciudad, TipoDeCliente, Genero, ProductoID, PrecioUnitario, Cantidad, Fecha, Hora, MedioDePagoID, IdentificadorDePago, EmpleadoID, Total)
-    VALUES (@VentaID, @TipoDeFactura, @Ciudad, @TipoDeCliente, @Genero, @ProductoID, @PrecioUnitario, @Cantidad, GETDATE(), @Hora, @MedioDePagoID, @IdentificadorDePago, @EmpleadoID, @Total);
-END;
-GO
-
-CREATE PROCEDURE Ventas.ActualizarVenta
-    @VentaID NVARCHAR(100),
-    @TipoDeFactura NVARCHAR(1) = NULL,
-    @Ciudad NVARCHAR(100) = NULL,
-    @TipoDeCliente NVARCHAR(100) = NULL,
-    @Genero NVARCHAR(6) = NULL,
-    @ProductoID INT = NULL,
-    @PrecioUnitario DECIMAL(10, 2) = NULL,
-    @Cantidad INT = NULL,
-    @Hora TIME = NULL,
-    @MedioDePagoID INT = NULL,
-    @IdentificadorDePago NVARCHAR(100) = NULL,
-    @EmpleadoID INT = NULL,
-    @Total DECIMAL(10, 2) = NULL
-AS
-BEGIN
-    -- Verificar si la venta existe
-    IF NOT EXISTS (SELECT 1 FROM Ventas.Venta WHERE VentaID = @VentaID)
-    BEGIN
-        RAISERROR('Venta no encontrada.', 16, 1);
-        RETURN;
-    END
-
-    -- Actualizar los campos solo si se proporciona un valor
-    UPDATE Ventas.Venta
-    SET
-        TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
-        Ciudad = COALESCE(@Ciudad, Ciudad),
-        TipoDeCliente = COALESCE(@TipoDeCliente, TipoDeCliente),
-        Genero = COALESCE(@Genero, Genero),
-        ProductoID = COALESCE(@ProductoID, ProductoID),
-        PrecioUnitario = COALESCE(@PrecioUnitario, PrecioUnitario),
-        Cantidad = COALESCE(@Cantidad, Cantidad),
-        Hora = COALESCE(@Hora, Hora),
-        MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
-        IdentificadorDePago = COALESCE(@IdentificadorDePago, IdentificadorDePago),
-        EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
-        Total = COALESCE(@Total, Total)
-    WHERE VentaID = @VentaID;
-END;
-GO
-
-CREATE PROCEDURE Ventas.EliminarVenta
-    @VentaID NVARCHAR(100)
-AS
-BEGIN
-    -- Verificar si la venta existe
-    IF NOT EXISTS (SELECT 1 FROM Ventas.Venta WHERE VentaID = @VentaID)
-    BEGIN
-        RAISERROR('Venta no encontrada.', 16, 1);
-        RETURN;
-    END
-
-    DELETE FROM Ventas.Venta
-    WHERE VentaID = @VentaID;
-END;
-GO
+go*/
 
 -- Tabla de detalles de ventas
 /*
@@ -538,13 +627,6 @@ CREATE TABLE Ventas.DetalleVentas (
 );
 */
 
-select * from Ventas.Venta
-go
---select * from Ventas.DetalleVentas
-select * from Catalogo.Producto
-go
-select * from Empleados.Empleado
-go
 
 --tabla para obtener el path del archivo .sql E:\Unlam\BaseDeDatosAplicada\2024-2C\TP\BDTP\TP.sql
 
