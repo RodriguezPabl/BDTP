@@ -9,11 +9,6 @@
 	Fecha: 5/11/24
 */
 
-/*
-use master
-drop database Com2900G12
-*/
-
 /* Entrega 3
 Luego de decidirse por un motor de base de datos relacional, llegó el momento de generar la
 base de datos.
@@ -86,7 +81,7 @@ CREATE TABLE Productos.Catalogo (
     Precio DECIMAL(10, 2) NOT NULL,
     PrecioReferencial DECIMAL(10, 2) NOT NULL,
     UnidadDeReferencia CHAR(2) NOT NULL,
-    Fecha DATETIME DEFAULT GETDATE()
+    Fecha SMALLDATETIME DEFAULT GETDATE()
 );
 GO
 
@@ -120,7 +115,7 @@ CREATE TABLE Ventas.Venta (
 	PrecioUnitario DECIMAL(10, 2) NOT NULL,
 	Cantidad INT NOT NULL,
     Fecha DATE NOT NULL DEFAULT GETDATE(),--Date tiene formato YYYY-MM-DD
-	Hora TIME NOT NULL,
+	Hora TIME(0) NOT NULL,
 	MedioDePago VARCHAR(25),
 	EmpleadoID INT,
 	IdentificadorDePago VARCHAR(50),
@@ -200,7 +195,7 @@ CREATE PROCEDURE Ventas.InsertarVenta
     @TipoDeFactura CHAR(1),
     @Ciudad VARCHAR(100),
     @TipoDeCliente VARCHAR(100),
-    @Genero VARCHAR(6),
+    @Genero VARCHAR(10),
     @Producto VARCHAR(100),
     @PrecioUnitario DECIMAL(10, 2),
     @Cantidad INT,
@@ -286,7 +281,7 @@ BEGIN
     -- Verificar si el catalogo existe
     IF NOT EXISTS (SELECT 1 FROM Productos.Catalogo WHERE ProductoID = @ProductoID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Catalogo no encontrado.', 16, 1);
         RETURN;
     END
     UPDATE Productos.Catalogo
@@ -309,7 +304,7 @@ BEGIN
     -- Verificar si el accesorio electronico existe
     IF NOT EXISTS (SELECT 1 FROM Productos.AccesorioElectronico WHERE AElectronicoID = @AElectronicoID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Accesorio electronico no encontrado.', 16, 1);
         RETURN;
     END
     UPDATE Productos.AccesorioElectronico
@@ -331,7 +326,7 @@ BEGIN
     -- Verificar si el producto importado existe
     IF NOT EXISTS (SELECT 1 FROM Productos.ProductoImportado WHERE PImportadoID = @PImportadoID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Producto importado no encontrado.', 16, 1);
         RETURN;
     END
     UPDATE Productos.ProductoImportado
@@ -362,7 +357,7 @@ BEGIN
     -- Verificar si la venta existe
     IF NOT EXISTS (SELECT 1 FROM Ventas.Venta WHERE VentaID = @VentaID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Venta no encontrada.', 16, 1);
         RETURN;
     END
     UPDATE Ventas.Venta
@@ -422,7 +417,7 @@ BEGIN
     -- Verificar si el catalogo existe
     IF NOT EXISTS (SELECT 1 FROM Productos.Catalogo WHERE ProductoID = @ProductoID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Catalogo no encontrado.', 16, 1);
         RETURN;
     END
     DELETE FROM Productos.Catalogo
@@ -437,7 +432,7 @@ BEGIN
     -- Verificar si el accesorio electronico existe
     IF NOT EXISTS (SELECT 1 FROM Productos.AccesorioElectronico WHERE AElectronicoID = @AElectronicoID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Accesorio electronico no encontrado.', 16, 1);
         RETURN;
     END
     DELETE FROM Productos.AccesorioElectronico
@@ -452,7 +447,7 @@ BEGIN
     -- Verificar si el producto importado existe
     IF NOT EXISTS (SELECT 1 FROM Productos.ProductoImportado WHERE PImportadoID = @PImportadoID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Producto importado no encontrado.', 16, 1);
         RETURN;
     END
     DELETE FROM Productos.ProductoImportado
@@ -467,7 +462,7 @@ BEGIN
     -- Verificar si la venta existe
     IF NOT EXISTS (SELECT 1 FROM Ventas.Venta WHERE VentaID = @VentaID)
     BEGIN
-        RAISERROR('Empleado no encontrado.', 16, 1);
+        RAISERROR('Venta no encontrada.', 16, 1);
         RETURN;
     END
     DELETE FROM Ventas.Venta
@@ -475,7 +470,6 @@ BEGIN
 END;
 GO
 
--- ##### PRUEBAS DE INSERCION #####
 /*
 select * from Ventas.Sucursal
 select * from Empleados.Empleado
@@ -484,72 +478,58 @@ select * from Productos.AccesorioElectronico
 select * from Productos.ProductoImportado
 select * from Ventas.Venta 
 
-EXEC Ventas.InsertarSucursal 
-    @Ciudad = 'Moron', 
-    @Direccion = 'Carlos Calvo 3344', 
-    @Telefono = '1234-6789';
+##### PRUEBAS DE INSERCION #####
+EXEC Ventas.InsertarSucursal @Ciudad = 'Moron', @Direccion = 'Carlos Calvo 3344', @Telefono = '1234-6789'
+EXEC Ventas.InsertarSucursal @Ciudad = 'Haedo', @Direccion = 'Int. Carrere 2598', @Telefono = '1234-6790'
+EXEC Ventas.InsertarSucursal @Ciudad = 'Ramos Mejia', @Direccion = 'Av. de Mayo 333', @Telefono = '1234-6791'
 
-EXEC Empleados.InsertarEmpleado 
-    @Nombre = 'Juan', 
-    @Apellido = 'Pérez', 
-    @Dni = 12345678, 
-    @Direccion = 'Av. Libertador 1000', 
-    @Email = 'juan.perez@example.com', 
-    @EmailEmpresarial = 'juan.perez@empresa.com', 
-    @Cuil = '20-12345678-9', 
-    @Cargo = 'Desarrollador', 
-    @SucursalID = 1, 
-    @Turno = 'TM';
+EXEC Empleados.InsertarEmpleado @Nombre = 'Juan', @Apellido = 'Pérez', @Dni = 12345678, @Direccion = 'Av. Libertador 1000', @Email = 'juan.perez@example.com', @EmailEmpresarial = 'juan.perez@empresa.com', 
+    @Cuil = '20-12345678-9', @Cargo = 'Desarrollador', @SucursalID = 1, @Turno = 'TM'
 
-EXEC Productos.InsertarCatalogo 
-    @LineaDeProducto = 'Electrónica', 
-    @Nombre = 'Smartphone XYZ', 
-    @Precio = 499.99, 
-    @PrecioReferencial = 599.99, 
-    @UnidadDeReferencia = 'KG';
+EXEC Productos.InsertarCatalogo @LineaDeProducto = 'Fruta', @Nombre = 'Banana', @Precio = 0.26, @PrecioReferencial = 1.29, @UnidadDeReferencia = 'kg'
+EXEC Productos.InsertarCatalogo @LineaDeProducto = 'Fruta', @Nombre = 'Uva', @Precio = 2.84, @PrecioReferencial = 3.79, @UnidadDeReferencia = 'kg'
+EXEC Productos.InsertarCatalogo @LineaDeProducto = 'Fruta', @Nombre = 'Manzana', @Precio = 0.45, @PrecioReferencial = 1.79, @UnidadDeReferencia = 'kg'
 
-EXEC Productos.InsertarAccesorioElectronico 
-    @Nombre = 'Cargador Rápido', 
-    @PrecioEnDolares = 29.99;
+EXEC Productos.InsertarAccesorioElectronico @Nombre = 'Cargador Rápido', @PrecioEnDolares = 29.99
 
-EXEC Productos.InsertarProductoImportado 
-    @Nombre = 'Laptop XYZ', 
-    @Proveedor = 'Proveedor ABC', 
-    @LineaDeProducto = 'Computación', 
-    @Precio = 799.99;
+EXEC Productos.InsertarProductoImportado @Nombre = 'Laptop XYZ', @Proveedor = 'Proveedor ABC', @LineaDeProducto = 'Computación', @Precio = 799.99
 
-EXEC Ventas.InsertarVenta 
-    @VentaID = '001-02-5678', 
-    @TipoDeFactura = 'A', 
-    @Ciudad = 'San Justo', 
-    @TipoDeCliente = 'Regular', 
-    @Genero = 'Masculino', 
-    @Producto = 'Smartphone XYZ', 
-    @PrecioUnitario = 499.99, 
-    @Cantidad = 1, 
-    @Hora = '14:30:00', 
-    @MedioDePago = 'Tarjeta', 
-    @EmpleadoID = 257020, 
-    @IdentificadorDePago = 'Pago123';
+EXEC Ventas.InsertarVenta @VentaID = '001-02-5678', @TipoDeFactura = 'A', @Ciudad = 'San Justo', @TipoDeCliente = 'Regular', @Genero = 'Masculino', @Producto = 'Smartphone XYZ',
+	@PrecioUnitario = 499.99, @Cantidad = 1, @Hora = '14:30:00', @MedioDePago = 'Tarjeta', @EmpleadoID = 257020, @IdentificadorDePago = '000202020301230'
 
-EXEC Ventas.ActualizarSucursal 
-    @SucursalID = 1, 
-    @Ciudad = 'Buenos Aires', 
-    @Direccion = 'Av. Corrientes 1234', 
-    @Telefono = '123-456789';
-*/
-
---##### PRUEBAS DE ELIMINACION #####
-/*
+##### PRUEBAS DE ELIMINACION #####
 EXEC Ventas.EliminarVenta @VentaID='001-02-5678'
 EXEC Empleados.EliminarEmpleado @EmpleadoID=257020
-*/
 
---##### PRUEBAS DE ACTUALIZACION #####
-/*
+##### PRUEBAS DE ACTUALIZACION #####
 EXEC Productos.ActualizarAccesorioElectronico @AElectronicoID=1, @PrecioEnDolares=14.99
 EXEC Productos.ActualizarProductoImportado @PImportadoID=1, @Nombre='Laptop ABC'
-¨*/
+EXEC Ventas.ActualizarSucursal @SucursalID = 2, @Ciudad = 'Buenos Aires', @Direccion = 'Av. Corrientes 1234', @Telefono = '1234-5678'
+*/
+
+-- VERIFICACION DE MEMORIA ASIGNADA Y PUERTOS QUE UTILIZA
+/*
+EXEC sp_configure 'show advanced options', 1;
+EXEC sp_configure 'show advanced options', 1;
+RECONFIGURE;
+EXEC sp_configure 'max server memory (MB)';
+EXEC sp_configure 'min server memory (MB)';
+
+SELECT local_net_address, local_tcp_port
+FROM sys.dm_exec_connections
+WHERE session_id = @@SPID;
+*/
+
+
+
+
+
+
+
+
+
+
+
 
 
 
