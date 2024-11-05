@@ -119,6 +119,7 @@ CREATE TABLE Ventas.Venta (
 	MedioDePago VARCHAR(25),
 	EmpleadoID INT,
 	IdentificadorDePago VARCHAR(50),
+	--Eliminado BIT DEFAULT 0, Ver si se considera un borrado logico de una venta por si se aceptan devoluciones (Generar un SP Dar de baja y uno para borrar definitivamente los borrados logicos)
     CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Empleados.Empleado(EmpleadoID),
 	--MedioDePagoID INT,
 	--CONSTRAINT FK_MedioDePago FOREIGN KEY (MedioDePagoID) REFERENCES Ventas.MedioDePago(MedioDePagoID) Revisar si usar la tabla MedioDePago
