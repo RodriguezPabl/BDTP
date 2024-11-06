@@ -1,9 +1,14 @@
 USE Com2900G12
 GO
 
-CREATE SCHEMA Venta;
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name='Venta')
+	EXEC('CREATE SCHEMA Venta')
 GO
-CREATE SCHEMA Producto;
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name='Producto')
+	EXEC('CREATE SCHEMA Producto')
 GO
-CREATE SCHEMA Sucursal
+
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name='Sucursal')
+	EXEC('CREATE SCHEMA Sucursal')
 GO
