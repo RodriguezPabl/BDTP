@@ -88,7 +88,7 @@ BEGIN
 		FacturaID CHAR(11),
 		ProductoID INT,
 		CONSTRAINT FK_Factura FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaID),
-		--CONSTRAINT FK_Producto
+		CONSTRAINT FK_Producto FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
 	)
 END
 GO
