@@ -39,7 +39,7 @@ CREATE SCHEMA Ventas;
 GO
 CREATE SCHEMA Productos;
 GO
-CREATE SCHEMA Empleados;
+CREATE SCHEMA Empleados; --Cambiar Empleados por Sucursal
 GO
 
 -- ##### TABLAS #####
@@ -64,7 +64,7 @@ CREATE TABLE Empleados.Empleado (
     Email VARCHAR(100) NOT NULL,
 	EmailEmpresarial VARCHAR(100) NOT NULL,
 	Cuil CHAR(13) NOT NULL,
-	Cargo VARCHAR(50) NOT NULL, --ver si es una tabla aparte
+	Cargo VARCHAR(50) NOT NULL,
 	SucursalID INT,
 	Turno VARCHAR(16) NOT NULL CHECK (Turno IN ('TM', 'TT', 'Jornada Completa')),
     CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES Ventas.Sucursal(SucursalID),
