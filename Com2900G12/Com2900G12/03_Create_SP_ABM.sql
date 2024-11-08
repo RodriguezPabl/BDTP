@@ -339,15 +339,8 @@ BEGIN
 
     -- Verificar si alguno de los parámetros es NULL
     IF @Descripcion IS NULL
-        SET @Errores = @Errores + 'El parámetro Descripcion no puede ser NULL. ';
-    
-    IF @Identificador IS NULL
-        SET @Errores = @Errores + 'El parámetro Identificador no puede ser NULL. ';
-    
-    -- Si hay errores, usar RAISEERROR para devolverlos
-    IF @Errores <> ''
     BEGIN
-        RAISERROR(@Errores, 16, 1);
+        RAISERROR('El parámetro Descripcion no puede ser NULL. ', 16, 1);
         RETURN;
     END
 
@@ -367,20 +360,8 @@ BEGIN
 
     -- Verificar si el MedioDePago existe
     IF NOT EXISTS (SELECT 1 FROM Venta.MedioDePago WHERE MedioDePagoID = @MedioDePagoID)
-        SET @Errores = @Errores + 'Medio de pago no encontrado. ';
-
-    -- Verificar si la nueva Descripción ya existe
-    IF @Descripcion IS NOT NULL AND EXISTS (SELECT 1 FROM Venta.MedioDePago WHERE Descripcion = @Descripcion AND MedioDePagoID <> @MedioDePagoID)
-        SET @Errores = @Errores + 'Ya existe un medio de pago con esa descripción. ';
-
-    -- Verificar si el nuevo Identificador ya existe
-    IF @Identificador IS NOT NULL AND EXISTS (SELECT 1 FROM Venta.MedioDePago WHERE Identificador = @Identificador AND MedioDePagoID <> @MedioDePagoID)
-        SET @Errores = @Errores + 'Ya existe un medio de pago con ese identificador. ';
-
-    -- Si hay errores, lanzar un error con la cadena concatenada
-    IF @Errores <> ''
     BEGIN
-        RAISERROR(@Errores, 16, 1);  -- Lanzamos los errores concatenados
+        RAISERROR('Medio de pago no encontrado. ', 16, 1);  -- Lanzamos los errores concatenados
         RETURN;
     END
 
@@ -488,8 +469,6 @@ GO
 CREATE OR ALTER PROCEDURE Venta.InsertarFactura
     @FacturaID INT = NULL,
     @TipoDeFactura CHAR(1) = NULL,
-    @Fecha DATE = NULL,
-    @Hora TIME(0) = NULL,
     @EmpleadoID INT = NULL,
     @MedioDePagoID INT = NULL,
 	@ClienteID INT = NULL
@@ -503,12 +482,6 @@ BEGIN
     
     IF @TipoDeFactura IS NULL
         SET @Errores = @Errores + 'El parámetro TipoDeFactura no puede ser NULL. ';
-
-    IF @Fecha IS NULL
-        SET @Errores = @Errores + 'El parámetro Fecha no puede ser NULL. ';
-    
-    IF @Hora IS NULL
-        SET @Errores = @Errores + 'El parámetro Hora no puede ser NULL. ';
     
     IF @EmpleadoID IS NULL
         SET @Errores = @Errores + 'El parámetro EmpleadoID no puede ser NULL. ';
@@ -527,16 +500,14 @@ BEGIN
     END
 
     -- Insertar los datos en la tabla
-    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura, Fecha, Hora, EmpleadoID, MedioDePagoID, ClienteID)
-    VALUES (@FacturaID, @TipoDeFactura, @Fecha, @Hora, @EmpleadoID, @MedioDePagoID, @ClienteID);
+    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura, EmpleadoID, MedioDePagoID, ClienteID)
+    VALUES (@FacturaID, @TipoDeFactura, @EmpleadoID, @MedioDePagoID, @ClienteID);
 END;
 GO
 
 CREATE OR ALTER PROCEDURE Venta.ModificarFactura
     @FacturaID INT,
     @TipoDeFactura CHAR(1) = NULL,
-    @Fecha DATE = NULL,
-    @Hora TIME(0) = NULL,
     @EmpleadoID INT = NULL,
     @MedioDePagoID INT = NULL,
 	@ClienteID INT = NULL
@@ -555,8 +526,6 @@ BEGIN
     UPDATE Venta.Factura
     SET 
         TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
-        Fecha = COALESCE(@Fecha, Fecha),
-        Hora = COALESCE(@Hora, Hora),
         EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
         MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
 		ClienteID = COALESCE(@ClienteID, ClienteID)

@@ -57,7 +57,7 @@ BEGIN
 	CREATE TABLE Venta.MedioDePago (
 		MedioDePagoID INT PRIMARY KEY IDENTITY(1,1),
 		Descripcion VARCHAR(50) NOT NULL,
-		Identificador VARCHAR(50) NOT NULL,
+		Identificador VARCHAR(50),
 		FechaBorrado DATE DEFAULT NULL,
 	)
 END
@@ -82,7 +82,7 @@ BEGIN
 		FacturaID INT PRIMARY KEY,
 		TipoDeFactura CHAR(1)  NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
 		Fecha DATE DEFAULT GETDATE(),
-		Hora TIME(0) NOT NULL,
+		Hora TIME(0) DEFAULT GETDATE(),
 		FechaBorrado DATE DEFAULT NULL,
 		EmpleadoID INT NOT NULL,
 		MedioDePagoID INT NOT NULL,
