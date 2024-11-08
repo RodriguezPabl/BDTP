@@ -9,7 +9,7 @@ BEGIN
 		Direccion VARCHAR(150) NOT NULL,
 		Telefono CHAR(9) NOT NULL CHECK (Telefono LIKE '[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
 		Horario VARCHAR(50) NOT NULL,
-		Estado BIT DEFAULT 0, --Ver si se puede cambiar por un TIMESTAMP
+		FechaBorrado DATE DEFAULT NULL,
 		CONSTRAINT UQ_Direccion UNIQUE (Direccion),
 		CONSTRAINT UQ_Telefono UNIQUE (Telefono)
 	)
@@ -21,7 +21,8 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Suc
 BEGIN
 	CREATE TABLE Sucursal.Cargo (
 		CargoID INT PRIMARY KEY IDENTITY(1,1),
-		Descripcion VARCHAR(25) NOT NULL
+		Descripcion VARCHAR(25) NOT NULL,
+		FechaBorrado DATE DEFAULT NULL
 	)
 END
 GO
@@ -38,8 +39,8 @@ BEGIN
 		Email VARCHAR(100) NOT NULL,
 		EmailEmpresarial VARCHAR(100) NOT NULL,
 		Cuil CHAR(13) NOT NULL,
-		Estado BIT DEFAULT 0,
 		Turno VARCHAR(16) NOT NULL CHECK (Turno IN ('TM', 'TT', 'Jornada Completa')),
+		FechaBorrado DATE DEFAULT NULL,
 		SucursalID INT NOT NULL,
 		CargoID INT NOT NULL,
 		CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES Sucursal.Sucursal(SucursalID),
@@ -56,7 +57,20 @@ BEGIN
 	CREATE TABLE Venta.MedioDePago (
 		MedioDePagoID INT PRIMARY KEY IDENTITY(1,1),
 		Descripcion VARCHAR(50) NOT NULL,
-		Identificador VARCHAR(50) NOT NULL
+		Identificador VARCHAR(50) NOT NULL,
+		FechaBorrado DATE DEFAULT NULL,
+	)
+END
+GO
+
+-- Tabla cliente
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Cliente')
+BEGIN
+	CREATE TABLE Venta.Cliente (
+		ClienteID INT PRIMARY KEY IDENTITY(1,1),
+		TipoDeCliente VARCHAR(20) NOT NULL,
+		Genero CHAR(1) NOT NULL,
+		FechaBorrado DATE DEFAULT NULL
 	)
 END
 GO
@@ -65,16 +79,17 @@ GO
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Factura')
 BEGIN
 	CREATE TABLE Venta.Factura (
-		FacturaID CHAR(11) PRIMARY KEY,
+		FacturaID INT PRIMARY KEY,
 		TipoDeFactura CHAR(1)  NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
-		TipoDeCliente VARCHAR(20) NOT NULL,
-		Genero CHAR(1) NOT NULL,
 		Fecha DATE DEFAULT GETDATE(),
 		Hora TIME(0) NOT NULL,
-		SucursalID INT NOT NULL,
+		FechaBorrado DATE DEFAULT NULL,
+		EmpleadoID INT NOT NULL,
 		MedioDePagoID INT NOT NULL,
-		CONSTRAINT FK_Sucursal FOREIGN KEY (SucursalID) REFERENCES Sucursal.Sucursal(SucursalID),
+		ClienteID INT NOT NULL,
+		CONSTRAINT FK_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Sucursal.Empleado(EmpleadoID),
 		CONSTRAINT FK_MedioDePago FOREIGN KEY (MedioDePagoID) REFERENCES Venta.MedioDePago(MedioDePagoID),
+		CONSTRAINT FK_Cliente FOREIGN KEY (ClienteID) REFERENCES Venta.Cliente(ClienteID)
 	)
 END
 GO
@@ -84,7 +99,8 @@ IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Pro
 BEGIN
 	CREATE TABLE Producto.CategoriaProducto(
 		CategoriaID INT PRIMARY KEY IDENTITY(1,1),
-		NombreCat VARCHAR(50) NOT NULL
+		NombreCat VARCHAR(50) NOT NULL UNIQUE,
+		FechaBorrado DATE DEFAULT NULL
 	)
 END
 GO
@@ -97,6 +113,7 @@ BEGIN
 		Nombre VARCHAR(100) NOT NULL,
 		Moneda VARCHAR (5) NOT NULL,
 		PrecioUnitario DECIMAL(7,2) NOT NULL,
+		FechaBorrado DATE DEFAULT NULL,
 		CategoriaID INT NOT NULL,
 		CONSTRAINT FK_Categoria FOREIGN KEY (CategoriaID) REFERENCES Producto.CategoriaProducto(CategoriaID)
 	)
@@ -109,8 +126,9 @@ BEGIN
 	CREATE TABLE Venta.DetalleFactura(
 		NumeroDeItem INT PRIMARY KEY IDENTITY(1,1),
 		Cantidad INT NOT NULL,
-		FacturaID CHAR(11) NOT NULL,
+		FacturaID INT NOT NULL,
 		ProductoID INT NOT NULL,
+		FechaBorrado DATE DEFAULT NULL,
 		CONSTRAINT FK_Factura FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaID),
 		CONSTRAINT FK_Producto FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
 	)

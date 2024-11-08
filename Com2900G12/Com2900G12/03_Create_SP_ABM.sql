@@ -99,7 +99,7 @@ BEGIN
 
     -- Actualizar el estado de la sucursal a 1 (eliminada o inactiva)
     UPDATE Sucursal.Sucursal
-    SET Estado = 1
+    SET FechaBorrado = GETDATE()
     WHERE SucursalID = @SucursalID;
 END;
 GO
@@ -171,7 +171,8 @@ BEGIN
     END
 
     -- Eliminar el cargo
-    DELETE FROM Sucursal.Cargo
+    UPDATE Sucursal.Cargo
+	SET FechaBorrado = GETDATE()
     WHERE CargoID = @CargoID;
 END;
 GO
@@ -185,7 +186,6 @@ CREATE OR ALTER PROCEDURE Sucursal.InsertarEmpleado
     @Email VARCHAR(100) = NULL,
     @EmailEmpresarial VARCHAR(100) = NULL,
     @Cuil CHAR(13) = NULL,
-    @Estado BIT = 0,
     @Turno VARCHAR(16) = NULL,
     @SucursalID INT = NULL,
     @CargoID INT = NULL
@@ -246,8 +246,8 @@ BEGIN
     END
 
     -- Insertar los datos en la tabla
-    INSERT INTO Sucursal.Empleado (Nombre, Apellido, Dni, Direccion, Email, EmailEmpresarial, Cuil, Estado, Turno, SucursalID, CargoID)
-    VALUES (@Nombre, @Apellido, @Dni, @Direccion, @Email, @EmailEmpresarial, @Cuil, @Estado, @Turno, @SucursalID, @CargoID);
+    INSERT INTO Sucursal.Empleado (Nombre, Apellido, Dni, Direccion, Email, EmailEmpresarial, Cuil, Turno, SucursalID, CargoID)
+    VALUES (@Nombre, @Apellido, @Dni, @Direccion, @Email, @EmailEmpresarial, @Cuil, @Turno, @SucursalID, @CargoID);
 END;
 GO
 
@@ -324,7 +324,7 @@ BEGIN
 
     -- Actualizar el estado de la sucursal a 1 (eliminada o inactiva)
     UPDATE Sucursal.Empleado
-    SET Estado = 1
+    SET FechaBorrado = GETDATE()
     WHERE EmpleadoID = @EmpleadoID;
 END;
 GO
@@ -405,21 +405,94 @@ BEGIN
     END
 
     -- Eliminar el medio de pago
-    DELETE FROM Venta.MedioDePago
+    UPDATE Venta.MedioDePago
+	SET FechaBorrado = GETDATE()
     WHERE MedioDePagoID = @MedioDePagoID;
 END;
 GO
 
+-- SP's de Cliente
+CREATE OR ALTER PROCEDURE Venta.InsetarCliente
+	@TipoDeCliente VARCHAR(20),
+	@Genero CHAR(1)
+AS
+BEGIN
+	DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
+	--Verrificar si algun parametro es NULL
+	IF @TipoDeCliente IS NULL
+        SET @Errores = @Errores + 'El parámetro TipoDeCliente no puede ser NULL. ';
+    
+    IF @Genero IS NULL
+        SET @Errores = @Errores + 'El parámetro Genero no puede ser NULL. ';
+
+	-- Si hay errores, usar RAISEERROR para devolverlos
+    IF @Errores <> ''
+    BEGIN
+        RAISERROR(@Errores, 16, 1);
+        RETURN;
+    END
+
+	-- Insertar los datos en la tabla
+    INSERT INTO Venta.Cliente (TipoDeCliente,Genero)
+    VALUES (@TipoDeCliente,@Genero);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE Venta.ModificarCliente
+	@ClienteID INT = NULL,
+	@TipoDeCliente VARCHAR(20) = NULL,
+	@Genero CHAR(1) = NULL
+AS
+BEGIN
+	DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
+
+    -- Verificar si la Factura existe
+    IF NOT EXISTS (SELECT 1 FROM Venta.Cliente WHERE ClienteID = @ClienteID)
+        SET @Errores = @Errores + 'Cliente no encontrado. ';
+
+	-- Si hay errores, lanzar un error con la cadena concatenada
+    IF @Errores <> ''
+    BEGIN
+        RAISERROR(@Errores, 16, 1);  -- Lanzamos los errores concatenados
+        RETURN;
+    END
+
+	--Realizar la actualizacion
+	UPDATE Venta.CLiente
+	SET
+		TipoDeCliente = COALESCE(@TipoDeCliente,TipoDeCliente),
+		Genero = COALESCE(@Genero,Genero)
+	WHERE ClienteID = @ClienteID
+END
+GO
+
+CREATE OR ALTER PROCEDURE Venta.BorrarCliente
+	@ClienteID INT
+AS
+BEGIN
+    -- Verificar si el cliente existe
+    IF NOT EXISTS (SELECT 1 FROM Venta.Cliente WHERE ClienteID = @ClienteID)
+    BEGIN
+        RAISERROR('Cliente no encontrado.', 16, 1);
+        RETURN;
+    END
+
+	--Realizar la actualizacion
+	UPDATE Venta.CLiente
+	SET FechaBorrado = GETDATE()
+	WHERE ClienteID = @ClienteID
+END
+GO
+	
 -- SP's de Factura
 CREATE OR ALTER PROCEDURE Venta.InsertarFactura
-    @FacturaID CHAR(11) = NULL,
+    @FacturaID INT = NULL,
     @TipoDeFactura CHAR(1) = NULL,
-    @TipoDeCliente VARCHAR(20) = NULL,
-    @Genero CHAR(1) = NULL,
     @Fecha DATE = NULL,
     @Hora TIME(0) = NULL,
-    @SucursalID INT = NULL,
-    @MedioDePagoID INT = NULL
+    @EmpleadoID INT = NULL,
+    @MedioDePagoID INT = NULL,
+	@ClienteID INT = NULL
 AS
 BEGIN
     DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
@@ -430,24 +503,21 @@ BEGIN
     
     IF @TipoDeFactura IS NULL
         SET @Errores = @Errores + 'El parámetro TipoDeFactura no puede ser NULL. ';
-    
-    IF @TipoDeCliente IS NULL
-        SET @Errores = @Errores + 'El parámetro TipoDeCliente no puede ser NULL. ';
-    
-    IF @Genero IS NULL
-        SET @Errores = @Errores + 'El parámetro Genero no puede ser NULL. ';
-    
+
     IF @Fecha IS NULL
         SET @Errores = @Errores + 'El parámetro Fecha no puede ser NULL. ';
     
     IF @Hora IS NULL
         SET @Errores = @Errores + 'El parámetro Hora no puede ser NULL. ';
     
-    IF @SucursalID IS NULL
-        SET @Errores = @Errores + 'El parámetro SucursalID no puede ser NULL. ';
+    IF @EmpleadoID IS NULL
+        SET @Errores = @Errores + 'El parámetro EmpleadoID no puede ser NULL. ';
     
     IF @MedioDePagoID IS NULL
         SET @Errores = @Errores + 'El parámetro MedioDePagoID no puede ser NULL. ';
+
+    IF @ClienteID IS NULL
+        SET @Errores = @Errores + 'El parámetro ClienteID no puede ser NULL. ';
     
     -- Si hay errores, usar RAISEERROR para devolverlos
     IF @Errores <> ''
@@ -457,32 +527,27 @@ BEGIN
     END
 
     -- Insertar los datos en la tabla
-    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura, TipoDeCliente, Genero, Fecha, Hora, SucursalID, MedioDePagoID)
-    VALUES (@FacturaID, @TipoDeFactura, @TipoDeCliente, @Genero, @Fecha, @Hora, @SucursalID, @MedioDePagoID);
+    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura, Fecha, Hora, EmpleadoID, MedioDePagoID, ClienteID)
+    VALUES (@FacturaID, @TipoDeFactura, @Fecha, @Hora, @EmpleadoID, @MedioDePagoID, @ClienteID);
 END;
 GO
 
 CREATE OR ALTER PROCEDURE Venta.ModificarFactura
-    @FacturaID CHAR(11),
+    @FacturaID INT,
     @TipoDeFactura CHAR(1) = NULL,
-    @TipoDeCliente VARCHAR(20) = NULL,
-    @Genero CHAR(1) = NULL,
     @Fecha DATE = NULL,
     @Hora TIME(0) = NULL,
-    @SucursalID INT = NULL,
-    @MedioDePagoID INT = NULL
+    @EmpleadoID INT = NULL,
+    @MedioDePagoID INT = NULL,
+	@ClienteID INT = NULL
 AS
 BEGIN
     DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
 
     -- Verificar si la Factura existe
     IF NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE FacturaID = @FacturaID)
-        SET @Errores = @Errores + 'Factura no encontrada. ';
-
-    -- Si hay errores, lanzar un error con la cadena concatenada
-    IF @Errores <> ''
     BEGIN
-        RAISERROR(@Errores, 16, 1);  -- Lanzamos los errores concatenados
+        RAISERROR('Factura no encontrada.', 16, 1);  -- Lanzamos los errores concatenados
         RETURN;
     END
 
@@ -490,18 +555,17 @@ BEGIN
     UPDATE Venta.Factura
     SET 
         TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
-        TipoDeCliente = COALESCE(@TipoDeCliente, TipoDeCliente),
-        Genero = COALESCE(@Genero, Genero),
         Fecha = COALESCE(@Fecha, Fecha),
         Hora = COALESCE(@Hora, Hora),
-        SucursalID = COALESCE(@SucursalID, SucursalID),
-        MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID)
+        EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
+        MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
+		ClienteID = COALESCE(@ClienteID, ClienteID)
     WHERE FacturaID = @FacturaID;
 END;
 GO
 
 CREATE OR ALTER PROCEDURE Venta.BorrarFactura
-    @FacturaID CHAR(11)
+    @FacturaID INT
 AS
 BEGIN
     -- Verificar si la factura existe
@@ -511,15 +575,9 @@ BEGIN
         RETURN;
     END
 
-    -- Verificar si la factura tiene registros dependientes en otras tablas
-    IF EXISTS (SELECT 1 FROM Venta.DetalleFactura WHERE FacturaID = @FacturaID)
-    BEGIN
-        RAISERROR('La factura tiene registros en DetalleFactura. Elimine los detalles primero.', 16, 1);
-        RETURN;
-    END
-
     -- Eliminar la factura
-    DELETE FROM Venta.Factura
+    UPDATE Venta.Factura
+	SET FechaBorrado = GETDATE()
     WHERE FacturaID = @FacturaID;
 END;
 GO
@@ -533,12 +591,8 @@ BEGIN
 
     -- Verificar si el parámetro es NULL
     IF @NombreCat IS NULL
-        SET @Errores = @Errores + 'El parámetro NombreCat no puede ser NULL. ';
-    
-    -- Si hay errores, usar RAISEERROR para devolverlos
-    IF @Errores <> ''
     BEGIN
-        RAISERROR(@Errores, 16, 1);
+        RAISERROR('El parámetro NombreCat no puede ser NULL. ', 16, 1);
         RETURN;
     END
 
@@ -589,15 +643,9 @@ BEGIN
         RETURN;
     END
 
-    -- Verificar si la categoría tiene productos asociados
-    IF EXISTS (SELECT 1 FROM Producto.Producto WHERE CategoriaID = @CategoriaID)
-    BEGIN
-        RAISERROR('La categoría tiene productos asociados. Debes borrar los productos primero.', 16, 1);
-        RETURN;
-    END
-
     -- Borrar la categoría
-    DELETE FROM Producto.CategoriaProducto
+    UPDATE Producto.CategoriaProducto
+	SET FechaBorrado = GETDATE()
     WHERE CategoriaID = @CategoriaID;
 END;
 GO
@@ -690,7 +738,8 @@ BEGIN
     END
 
     -- Borrar el producto
-    DELETE FROM Producto.Producto
+    UPDATE Producto.Producto
+	SET FechaBorrado = GETDATE()
     WHERE ProductoID = @ProductoID;
 END;
 GO
@@ -785,7 +834,8 @@ BEGIN
     END
 
     -- Borrar el detalle de factura
-    DELETE FROM Venta.DetalleFactura
+    UPDATE Venta.DetalleFactura
+	SET FechaBorrado = GETDATE()
     WHERE NumeroDeItem = @NumeroDeItem;
 END;
 GO
