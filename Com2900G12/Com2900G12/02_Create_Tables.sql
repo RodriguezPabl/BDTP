@@ -1,6 +1,7 @@
 USE Com2900G12
 GO
 
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Sucursal' AND TABLE_NAME = 'Sucursal')
 BEGIN
 	CREATE TABLE Sucursal.Sucursal (
@@ -38,7 +39,7 @@ BEGIN
 		Direccion VARCHAR(150) NOT NULL,
 		Email VARCHAR(100) NOT NULL,
 		EmailEmpresarial VARCHAR(100) NOT NULL,
-		Cuil CHAR(13) NOT NULL,
+		Cuil CHAR(13),
 		Turno VARCHAR(16) NOT NULL CHECK (Turno IN ('TM', 'TT', 'Jornada Completa')),
 		FechaBorrado DATE DEFAULT NULL,
 		SucursalID INT NOT NULL,
@@ -50,6 +51,11 @@ BEGIN
 	)
 END
 GO
+
+ALTER TABLE Sucursal.Empleado
+ALTER COLUMN Cuil VARCHAR(14);
+
+
 
 -- Tabla de medios de pago
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'MedioDePago')
@@ -134,58 +140,3 @@ BEGIN
 	)
 END
 GO
-
-/*
--- Tabla de catalogo
-CREATE TABLE Productos.Catalogo (
-    ProductoID INT PRIMARY KEY IDENTITY(1,1),
-    LineaDeProducto VARCHAR(100) NOT NULL,
-    Nombre VARCHAR(100) NOT NULL,
-    Precio DECIMAL(10, 2) NOT NULL,
-    PrecioReferencial DECIMAL(10, 2) NOT NULL,
-    UnidadDeReferencia CHAR(2) NOT NULL,
-    Fecha SMALLDATETIME DEFAULT GETDATE()
-);
-GO
-
--- Tabla de accesorios electronicos
-CREATE TABLE Productos.AccesorioElectronico (
-	AElectronicoID INT PRIMARY KEY IDENTITY(1,1),
-	Nombre VARCHAR(100) NOT NULL,
-	PrecioEnDolares DECIMAL(7,2) NOT NULL -- Luego si se vende se debe transformar a pesos
-);
-GO
-
--- Tabla de productos importados
-CREATE TABLE Productos.ProductoImportado (
-	PImportadoID INT PRIMARY KEY IDENTITY(1,1),
-	Nombre VARCHAR(100) NOT NULL,
-	Proveedor VARCHAR(100) NOT NULL, -- Quizas se puede omitir
-	LineaDeProducto VARCHAR(100) NOT NULL,
-	--Cantidad INT, La omitimos ya que no nos importa la administracion de stock de los productos
-	Precio DECIMAL(7,2) NOT NULL
-);
-GO
-
--- Tabla de ventas
-CREATE TABLE Venta.Venta (
-    VentaID VARCHAR(100) PRIMARY KEY CHECK (VentaID LIKE '[0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9]'), 
-	TipoDeFactura CHAR(1) CHECK (TipoDeFactura IN ('A', 'B', 'C')),
-	Ciudad VARCHAR(100), --ciudad si es Yangon reemplazar por San Justo, etc
-	TipoDeCliente VARCHAR(100) , --ver si es una tabla aparte
-	Genero VARCHAR(6) ,
-	Producto VARCHAR(100),
-	PrecioUnitario DECIMAL(10, 2) NOT NULL,
-	Cantidad INT,
-    Fecha DATE DEFAULT GETDATE(),--Date tiene formato YYYY-MM-DD
-	Hora TIME(0),
-	MedioDePago VARCHAR(25),
-	EmpleadoID INT,
-	IdentificadorDePago VARCHAR(50),
-	--Eliminado BIT DEFAULT 0, Ver si se considera un borrado logico de una venta por si se aceptan devoluciones (Generar un SP Dar de baja y uno para borrar definitivamente los borrados logicos)
-    CONSTRAINT FK_Venta_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Empleados.Empleado(EmpleadoID),
-	--MedioDePagoID INT,
-	--CONSTRAINT FK_MedioDePago FOREIGN KEY (MedioDePagoID) REFERENCES Ventas.MedioDePago(MedioDePagoID) Revisar si usar la tabla MedioDePago
-);
-GO
-*/

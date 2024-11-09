@@ -1,29 +1,131 @@
-CREATE OR ALTER PROCEDURE Producto.ImportarDesdeExcel
-    @Path NVARCHAR(100), 
-    @Hoja NVARCHAR(100)
+use Com2900G12;
+GO
+
+
+
+CREATE OR ALTER PROCEDURE Sucursal.ImportarSucursal
+    @Path VARCHAR(255), 
+    @Hoja VARCHAR(255)
 AS
 BEGIN
-    -- Eliminar la tabla temporal global si ya existe
-    IF OBJECT_ID('tempdb..##TEMP') IS NOT NULL
-        DROP TABLE ##TEMP;
+    -- Eliminar la tabla temporal local si ya existe
+    DROP TABLE IF EXISTS #TempSucursal;
+
+    -- Crear la tabla temporal local
+    CREATE TABLE #TempSucursal (
+        [Ciudad] VARCHAR(50),
+        [Reemplazar por] VARCHAR(50),
+        [Direccion] VARCHAR(100),
+        [Telefono] VARCHAR(50),
+        [Horario] VARCHAR(100)
+    );
 
     -- Construir y ejecutar la consulta para importar los datos
     DECLARE @SQL NVARCHAR(MAX);
     SET @SQL = 
-        'SELECT * INTO ##TEMP FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'', ' +
+        'INSERT INTO #TempSucursal SELECT * FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'', ' +
         '''Excel 12.0;Database=' + @Path + ';HDR=YES;IMEX=1'', ' +
         '''SELECT * FROM [' + @Hoja + '$]'')';
 
+    -- Ejecutar la consulta
     EXEC sp_executesql @SQL;
+
+
+    -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
+    INSERT INTO Sucursal.Sucursal (Ciudad, Direccion, Telefono, Horario)
+    SELECT 
+        [Reemplazar por], [Direccion], [Telefono], [Horario]
+    FROM 
+        #TempSucursal AS Temp
+    WHERE 
+        NOT EXISTS (
+            SELECT 1
+            FROM Sucursal.Sucursal AS S
+            WHERE 
+                S.Direccion = Temp.[Direccion] OR
+                S.Telefono = Temp.[Telefono]
+        );
+
+	DROP TABLE #TempSucursal
 END
 GO
 
--- Llamar al procedimiento para importar datos, PRIMER PARAMETRO ES RUTA Y EL SEGUNDO ES LA HOJA 
-EXEC Producto.ImportarDesdeExcel 'C:\Users\aguil\Documents\GitHub\BDTP\TP_integrador_Archivos\Informacion_complementaria.xlsx', 'Empleados';
 
+CREATE OR ALTER PROCEDURE Sucursal.ImportarCargoEmpleado
+    @Path VARCHAR(255), 
+    @Hoja VARCHAR(255)
+AS
+BEGIN
+    -- Eliminar la tabla temporal local si ya existe
+    DROP TABLE IF EXISTS #TempCargoEmpleado;
+
+    -- Crear la tabla temporal local
+    CREATE TABLE #TempCargoEmpleado (
+        [Legajo/ID] VARCHAR(50),
+        [Nombre] VARCHAR(100),
+        [Apellido] VARCHAR(100),
+        [DNI] VARCHAR(50),
+        [Direccion] VARCHAR(200),
+        [email personal] VARCHAR(100),
+        [email empresa] VARCHAR(100),
+        [CUIL] VARCHAR(50),
+        [Cargo] VARCHAR(50),
+        [Sucursal] VARCHAR(50),
+        [Turno] VARCHAR(50)		
+    );
+
+    -- Construir y ejecutar la consulta para importar los datos
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = 
+        'INSERT INTO #TempCargoEmpleado SELECT * FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'', ' +
+        '''Excel 12.0;Database=' + @Path + ';HDR=YES;IMEX=1'', ' +
+        '''SELECT * FROM [' + @Hoja + '$]'')';
+
+    -- Ejecutar la consulta
+    EXEC sp_executesql @SQL;
+
+    -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
+    INSERT INTO Sucursal.Cargo (Descripcion)
+    SELECT DISTINCT
+        TRIM([Cargo])
+    FROM 
+        #TempCargoEmpleado AS Temp
+    WHERE [Cargo] IS NOT NULL AND
+        NOT EXISTS (
+            SELECT 1
+            FROM Sucursal.Cargo AS S
+            WHERE S.Descripcion = TRIM(Temp.[Cargo])
+        );
+    
+    INSERT INTO Sucursal.Empleado (Nombre, Apellido, Dni, Direccion, Email, EmailEmpresarial, Cuil, Turno, SucursalID, CargoID) 
+    SELECT 
+        TRIM([Nombre]), 
+        TRIM([Apellido]), 
+        TRIM([DNI]), 
+        TRIM([Direccion]), 
+        TRIM([email personal]), 
+        TRIM([email empresa]), 
+        TRIM([CUIL]), 
+        TRIM([Turno]), 
+        (SELECT SucursalID FROM Sucursal.Sucursal WHERE Ciudad = TRIM([Sucursal])),
+        (SELECT CargoID FROM Sucursal.Cargo WHERE Descripcion = TRIM([Cargo])) 
+    FROM 
+        #TempCargoEmpleado AS Temp
+    WHERE Nombre IS NOT NULL AND
+        NOT EXISTS (
+            SELECT 1
+            FROM Sucursal.Empleado AS S
+            WHERE S.Email = TRIM(Temp.[email personal]) OR
+                  S.EmailEmpresarial = TRIM(Temp.[email empresa])
+        );
+
+    -- Eliminar la tabla temporal
+    DROP TABLE #TempCargoEmpleado;
+END
 GO
--- Consultar el contenido de la tabla temporal después de ejecutar el procedimiento
-SELECT * FROM ##TEMP;
+
+
+
 
 
 -- Verificar si hay registros duplicados en la tabla temporal ##TEMP
@@ -95,7 +197,8 @@ BEGIN
 					FORMAT = ''CSV'',
                     FIELDTERMINATOR = '','',    -- Delimitador de campo (coma)
                     ROWTERMINATOR = ''\n'',     -- Delimitador de fila (salto de línea)
-                    FIRSTROW = 2               -- Empieza desde la segunda fila (la primera fila contiene los encabezados)
+                    FIRSTROW = 2,               -- Empieza desde la segunda fila (la primera fila contiene los encabezados)
+					CODEPAGE = ''65001''
                 );'
 
     -- Ejecutar el SQL dinámico
