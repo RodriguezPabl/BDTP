@@ -1,15 +1,15 @@
 USE Com2900G12
 GO
 
-
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Sucursal' AND TABLE_NAME = 'Sucursal')
 BEGIN
 	CREATE TABLE Sucursal.Sucursal (
 		SucursalID INT PRIMARY KEY IDENTITY(1,1),
 		Ciudad VARCHAR(100) NOT NULL,
+		ReemplazarPor VARCHAR(100) DEFAULT NULL,
 		Direccion VARCHAR(150) NOT NULL,
-		Telefono CHAR(9) NOT NULL CHECK (Telefono LIKE '[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
-		Horario VARCHAR(50) NOT NULL,
+		Telefono VARCHAR(15) NOT NULL CHECK (Telefono LIKE '[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+		Horario VARCHAR(100) NOT NULL,
 		FechaBorrado DATE DEFAULT NULL,
 		CONSTRAINT UQ_Direccion UNIQUE (Direccion),
 		CONSTRAINT UQ_Telefono UNIQUE (Telefono)
@@ -52,18 +52,13 @@ BEGIN
 END
 GO
 
-ALTER TABLE Sucursal.Empleado
-ALTER COLUMN Cuil VARCHAR(14);
-
-
-
 -- Tabla de medios de pago
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'MedioDePago')
 BEGIN
 	CREATE TABLE Venta.MedioDePago (
 		MedioDePagoID INT PRIMARY KEY IDENTITY(1,1),
-		Descripcion VARCHAR(50) NOT NULL,
-		Identificador VARCHAR(50),
+		DescripcionESP VARCHAR(50) NOT NULL,
+		DescripcionING VARCHAR(50) NOT NULL,
 		FechaBorrado DATE DEFAULT NULL,
 	)
 END
@@ -85,10 +80,12 @@ GO
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Factura')
 BEGIN
 	CREATE TABLE Venta.Factura (
-		FacturaID INT PRIMARY KEY,
+		FacturaNum INT PRIMARY KEY IDENTITY(1,1),
+		FacturaID VARCHAR(25),
 		TipoDeFactura CHAR(1)  NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
 		Fecha DATE DEFAULT GETDATE(),
 		Hora TIME(0) DEFAULT GETDATE(),
+		Identificador VARCHAR(50),
 		FechaBorrado DATE DEFAULT NULL,
 		EmpleadoID INT NOT NULL,
 		MedioDePagoID INT NOT NULL,
@@ -135,7 +132,7 @@ BEGIN
 		FacturaID INT NOT NULL,
 		ProductoID INT NOT NULL,
 		FechaBorrado DATE DEFAULT NULL,
-		CONSTRAINT FK_Factura FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaID),
+		CONSTRAINT FK_Factura FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaNum),
 		CONSTRAINT FK_Producto FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
 	)
 END
