@@ -64,7 +64,7 @@ BEGIN
         [Legajo/ID] VARCHAR(50),
         [Nombre] VARCHAR(100),
         [Apellido] VARCHAR(100),
-        [DNI] VARCHAR(50),
+        [DNI] INT,
         [Direccion] VARCHAR(200),
         [email personal] VARCHAR(100),
         [email empresa] VARCHAR(100),
@@ -83,6 +83,12 @@ BEGIN
 
     -- Ejecutar la consulta
     EXEC sp_executesql @SQL;
+
+	UPDATE #TempCargoEmpleado
+	SET [email personal] = REPLACE(REPLACE(([email personal]), CHAR(9), ''), ' ', '')
+
+	UPDATE #TempCargoEmpleado
+	SET [email empresa] = REPLACE(REPLACE(([email empresa]), CHAR(9), ''), ' ', '')
 
     -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
     INSERT INTO Sucursal.Cargo (Descripcion)
@@ -103,8 +109,8 @@ BEGIN
         ([Apellido]), 
         ([DNI]), 
         ([Direccion]), 
-        REPLACE([email personal], ' ',''), 
-        REPLACE([email empresa], ' ',''), 
+        ([email personal]), 
+        ([email empresa]),
 		([CUIL]),
         (SELECT SucursalID FROM Sucursal.Sucursal WHERE ReemplazarPor = ([Sucursal])),
         (SELECT CargoID FROM Sucursal.Cargo WHERE Descripcion = ([Cargo])),
@@ -115,8 +121,8 @@ BEGIN
         NOT EXISTS (
             SELECT 1
             FROM Sucursal.Empleado AS S
-            WHERE S.Email = REPLACE(Temp.[email personal], ' ','') OR
-                  S.EmailEmpresarial = REPLACE(Temp.[email empresa], ' ','')
+            WHERE S.Email = ([email personal]) OR
+                  S.EmailEmpresarial = ([email empresa])
         );
 
     -- Eliminar la tabla temporal
@@ -245,6 +251,9 @@ BEGIN
     -- Ejecutar el SQL dinámico
     EXEC sp_executesql @SQL;
 
+	UPDATE #TempCatalogo
+    SET Nombre = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Nombre, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º'), 'Ãƒº', 'ú'), 'Ã‘', 'Ñ'), 'Ã', 'Á'), '?' , 'ñ'), 'å˜', 'ñ');
+
 	INSERT INTO Producto.Producto (Nombre, PrecioUnitario, CategoriaID, Fecha)
 	SELECT DISTINCT
 		([Nombre]),
@@ -288,6 +297,9 @@ BEGIN
 
     -- Ejecutar la consulta
     EXEC sp_executesql @SQL;
+
+	UPDATE #TempEA
+	SET Producto = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Producto, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º'), 'Ãƒº', 'ú'), 'Ã‘', 'Ñ'), 'Ã', 'Á'), '?' , 'ñ'), 'å˜', 'ñ')
 
 	IF NOT EXISTS (SELECT 1 FROM Producto.CategoriaProducto WHERE NombreCat = 'Electronico')
 		INSERT INTO Producto.CategoriaProducto (NombreCat) VALUES ('Electronico')
@@ -343,6 +355,8 @@ BEGIN
     -- Ejecutar la consulta
     EXEC sp_executesql @SQL;
 	
+	UPDATE #TempPI
+	SET Producto = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Producto, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º'), 'Ãƒº', 'ú'), 'Ã‘', 'Ñ'), 'Ã', 'Á'), '?' , 'ñ'), 'å˜', 'ñ')
 	INSERT INTO Producto.CategoriaProducto(NombreCat,LineaDeProducto)
     SELECT DISTINCT
         ([Categoria]),
@@ -423,7 +437,7 @@ BEGIN
 
 	-- Realizar los reemplazos en el campo Producto
     UPDATE #TempVenta
-    SET Producto = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Producto, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º');
+    SET Producto = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Producto, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º'), 'Ãƒº', 'ú'), 'Ã‘', 'Ñ'), 'Ã', 'Á'), '?' , 'ñ'), 'å˜', 'ñ');
 
 	--SELECT * FROM #TempVenta
 	
@@ -471,6 +485,13 @@ BEGIN
 		(SELECT FacturaNum FROM Venta.Factura WHERE FacturaID = ([ID_Factura])),
 		(SELECT TOP 1 ProductoID FROM Producto.Producto WHERE Nombre = ([Producto]))
 	FROM #TempVenta AS Temp
+	WHERE NOT EXISTS (
+		SELECT 1
+		FROM Venta.DetalleFactura AS DF
+		JOIN Venta.Factura F ON DF.FacturaID = F.FacturaNum
+		JOIN Producto.Producto P ON DF.ProductoID = P.ProductoID
+		WHERE Temp.[ID_Factura] = F.FacturaID AND Temp.[Producto] = P.Nombre
+	)
 
 	DROP TABLE #TempVenta
 END;
