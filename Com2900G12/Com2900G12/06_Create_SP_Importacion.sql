@@ -168,6 +168,218 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Producto.ImportarCategoriaProducto
+    @Path VARCHAR(255), 
+    @Hoja VARCHAR(255)
+AS
+BEGIN
+    -- Eliminar la tabla temporal local si ya existe
+    DROP TABLE IF EXISTS #TempCategoriaProducto;
+
+    -- Crear la tabla temporal local
+    CREATE TABLE #TempCategoriaProducto (
+		LineaDeProducto VARCHAR(100),
+		Producto VARCHAR(100)
+    );
+
+    -- Construir y ejecutar la consulta para importar los datos
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = 
+        'INSERT INTO #TempCategoriaProducto SELECT * FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'', ' +
+        '''Excel 12.0;Database=' + @Path + ';HDR=YES;IMEX=1'', ' +
+        '''SELECT * FROM [' + @Hoja + '$]'')';
+
+    -- Ejecutar la consulta
+    EXEC sp_executesql @SQL;
+
+    -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
+    INSERT INTO Producto.CategoriaProducto(NombreCat,LineaDeProducto)
+    SELECT DISTINCT
+        ([LineaDeProducto]),
+		([Producto])
+    FROM 
+        #TempCategoriaProducto AS Temp
+    WHERE
+        [LineaDeProducto] IS NOT NULL 
+        AND [Producto] IS NOT NULL 
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Producto.CategoriaProducto AS S
+            WHERE (S.LineaDeProducto = Temp.[Producto] )
+        );
+
+    -- Eliminar la tabla temporal
+    DROP TABLE #TempCategoriaProducto;
+END
+GO
+
+
+CREATE OR ALTER PROCEDURE Producto.ImportarCatalogo
+	    @RutaArchivo VARCHAR(255) -- Ruta del archivo CSV
+AS
+BEGIN
+	DROP TABLE IF EXISTS #TempCatalogo
+
+	CREATE TABLE #TempCatalogo (
+		Id VARCHAR (10),
+		Categoria VARCHAR (100),
+		Nombre VARCHAR (200),
+		Precio VARCHAR (10),
+		PrecioReferencial VARCHAR (10),
+		UnidadDeReferencia VARCHAR (10),
+		Fecha VARCHAR (25)
+	)
+
+	DECLARE @SQL NVARCHAR (MAX)
+
+    SET @SQL = N'BULK INSERT #TempCatalogo
+                FROM ' + QUOTENAME(@RutaArchivo, '''') + N'
+                WITH (
+					FORMAT = ''CSV'',
+                    FIELDTERMINATOR = '','',    -- Delimitador de campo (coma)
+                    ROWTERMINATOR = ''\n'',     -- Delimitador de fila (salto de línea)
+                    FIRSTROW = 2,               -- Empieza desde la segunda fila (la primera fila contiene los encabezados)
+					CODEPAGE = ''65001''
+                );'
+
+    -- Ejecutar el SQL dinámico
+    EXEC sp_executesql @SQL;
+
+	INSERT INTO Producto.Producto (Nombre, PrecioUnitario, CategoriaID, Fecha)
+	SELECT DISTINCT
+		([Nombre]),
+		([Precio]),
+		(SELECT CategoriaID FROM Producto.CategoriaProducto WHERE LineaDeProducto = ([Categoria])),
+		([Fecha])
+	FROM 
+		#TempCatalogo AS Temp
+    WHERE [Nombre] IS NOT NULL AND
+        NOT EXISTS (
+            SELECT 1
+            FROM Producto.Producto AS S
+            WHERE S.Nombre = (Temp.[Nombre])
+        );
+		
+    -- Eliminar la tabla temporal
+    DROP TABLE #TempCatalogo;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE Producto.ImportarAccesorioElectronico
+    @Path VARCHAR(255), 
+    @Hoja VARCHAR(255)
+AS
+BEGIN
+    -- Eliminar la tabla temporal local si ya existe
+    DROP TABLE IF EXISTS #TempEA;
+
+    -- Crear la tabla temporal local
+    CREATE TABLE #TempEA (
+		Producto VARCHAR(100),
+		Precio VARCHAR(100)
+    );
+
+    -- Construir y ejecutar la consulta para importar los datos
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = 
+        'INSERT INTO #TempEA SELECT * FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'', ' +
+        '''Excel 12.0;Database=' + @Path + ';HDR=YES;IMEX=1'', ' +
+        '''SELECT * FROM [' + @Hoja + '$]'')';
+
+    -- Ejecutar la consulta
+    EXEC sp_executesql @SQL;
+
+	IF NOT EXISTS (SELECT 1 FROM Producto.CategoriaProducto WHERE NombreCat = 'Electronico')
+		INSERT INTO Producto.CategoriaProducto (NombreCat) VALUES ('Electronico')
+
+    -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
+    INSERT INTO Producto.Producto(Nombre,PrecioUnitario,Moneda,CategoriaID)
+    SELECT DISTINCT
+        ([Producto]),
+		([Precio]),
+		'USD',
+		(SELECT CategoriaID FROM Producto.CategoriaProducto WHERE NombreCat = 'Electronico')
+    FROM 
+        #TempEA AS Temp
+    WHERE
+        [Producto] IS NOT NULL 
+        AND [Precio] IS NOT NULL 
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Producto.Producto AS S
+            WHERE (S.Nombre = Temp.[Producto] )
+        );
+
+    -- Eliminar la tabla temporal
+    DROP TABLE #TempEA;
+END
+GO
+
+CREATE OR ALTER PROCEDURE Producto.ImportarProductosImportados
+    @Path VARCHAR(255), 
+    @Hoja VARCHAR(255)
+AS
+BEGIN
+    -- Eliminar la tabla temporal local si ya existe
+    DROP TABLE IF EXISTS #TempPI;
+
+    -- Crear la tabla temporal local
+    CREATE TABLE #TempPI (
+		ProductoID VARCHAR(100),
+		Producto VARCHAR(100),
+		Proveedor VARCHAR(100),
+		Categoria VARCHAR(100),
+		CantidadPorUnidad VARCHAR(100),
+		PrecioUnitario VARCHAR(100)
+    );
+
+    -- Construir y ejecutar la consulta para importar los datos
+    DECLARE @SQL NVARCHAR(MAX);
+    SET @SQL = 
+        'INSERT INTO #TempPI SELECT * FROM OPENROWSET(''Microsoft.ACE.OLEDB.12.0'', ' +
+        '''Excel 12.0;Database=' + @Path + ';HDR=YES;IMEX=1'', ' +
+        '''SELECT * FROM [' + @Hoja + '$]'')';
+
+    -- Ejecutar la consulta
+    EXEC sp_executesql @SQL;
+	
+	INSERT INTO Producto.CategoriaProducto(NombreCat,LineaDeProducto)
+    SELECT DISTINCT
+        ([Categoria]),
+		([Categoria])
+    FROM 
+        #TempPI AS Temp
+    WHERE
+        [Categoria] IS NOT NULL 
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Producto.CategoriaProducto AS S
+            WHERE (S.LineaDeProducto = Temp.[Categoria])
+        );
+	
+    -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
+	
+    INSERT INTO Producto.Producto(Nombre,PrecioUnitario,CategoriaID)
+    SELECT DISTINCT
+        ([Producto]),
+		([PrecioUnitario]),
+		(SELECT CategoriaID FROM Producto.CategoriaProducto WHERE LineaDeProducto = ([Categoria]))
+    FROM 
+        #TempPI AS Temp
+    WHERE
+        [Producto] IS NOT NULL 
+        AND [PrecioUnitario] IS NOT NULL 
+        AND NOT EXISTS (
+            SELECT 1
+            FROM Producto.Producto AS S
+            WHERE (S.Nombre = Temp.[Producto] )
+        );
+		
+    -- Eliminar la tabla temporal
+    DROP TABLE #TempPI;
+END
+GO
+
 CREATE OR ALTER PROCEDURE Venta.ImportarClienteFactura
     @RutaArchivo VARCHAR(255) -- Ruta del archivo CSV
 AS
@@ -176,7 +388,8 @@ BEGIN
     DROP TABLE IF EXISTS #TempVenta;
     
     -- Crear la tabla temporal con tipo de datos VARCHAR
-    CREATE TABLE #TempVenta (
+    
+	CREATE TABLE #TempVenta (
         ID_Factura VARCHAR(50),
         Tipo_de_Factura VARCHAR(5),
         Ciudad VARCHAR(50),
@@ -208,6 +421,12 @@ BEGIN
     -- Ejecutar el SQL dinámico
     EXEC sp_executesql @SQL;
 
+	-- Realizar los reemplazos en el campo Producto
+    UPDATE #TempVenta
+    SET Producto = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Producto, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º');
+
+	--SELECT * FROM #TempVenta
+	
 	INSERT INTO Venta.Cliente (TipoDeCliente, Genero)
 	SELECT DISTINCT
 		([Tipo_de_Cliente]),
@@ -246,48 +465,13 @@ BEGIN
 		WHERE Temp.[ID_Factura] = F.FacturaID
 	)
 	
+	INSERT INTO Venta.DetalleFactura(Cantidad,FacturaID,ProductoID)
+	SELECT
+		([Cantidad]),
+		(SELECT FacturaNum FROM Venta.Factura WHERE FacturaID = ([ID_Factura])),
+		(SELECT TOP 1 ProductoID FROM Producto.Producto WHERE Nombre = ([Producto]))
+	FROM #TempVenta AS Temp
+
 	DROP TABLE #TempVenta
 END;
 GO
-
-CREATE OR ALTER PROCEDURE Producto.ImportarCatalogo
-	    @RutaArchivo VARCHAR(255) -- Ruta del archivo CSV
-AS
-BEGIN
-	DROP TABLE IF EXISTS #TempCatalogo
-
-	CREATE TABLE #TempCatalogo (
-		Id VARCHAR (10),
-		Categoria VARCHAR (100),
-		Nombre VARCHAR (200),
-		Precio VARCHAR (10),
-		PrecioReferencial VARCHAR (10),
-		UnidadDeReferencia VARCHAR (10),
-		Fecha VARCHAR (25)
-	)
-
-	DECLARE @SQL NVARCHAR (MAX)
-
-    SET @SQL = N'BULK INSERT #TempCatalogo
-                FROM ' + QUOTENAME(@RutaArchivo, '''') + N'
-                WITH (
-					FORMAT = ''CSV'',
-                    FIELDTERMINATOR = '','',    -- Delimitador de campo (coma)
-                    ROWTERMINATOR = ''\n'',     -- Delimitador de fila (salto de línea)
-                    FIRSTROW = 2,               -- Empieza desde la segunda fila (la primera fila contiene los encabezados)
-					CODEPAGE = ''65001''
-                );'
-
-    -- Ejecutar el SQL dinámico
-    EXEC sp_executesql @SQL;
-
-    -- Seleccionar los datos para ver los resultados del BULK INSERT
-    SELECT * FROM #TempCatalogo;
-END;
-GO
-
-
-
-
-
-
