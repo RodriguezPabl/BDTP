@@ -31,53 +31,53 @@
     </LogicalFolder>
     <LogicalFolder Name="Queries" Type="0" Sorted="true">
       <Items>
-        <FileNode Name="00_Create_Database.sql">
+        <FileNode Name="00_Create_Database-E3.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>00_Create_Database.sql</FullPath>
+          <FullPath>00_Create_Database-E3.sql</FullPath>
         </FileNode>
-        <FileNode Name="01_Create_Schemas.sql">
+        <FileNode Name="01_Create_Schemas_E3.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>01_Create_Schemas.sql</FullPath>
+          <FullPath>01_Create_Schemas_E3.sql</FullPath>
         </FileNode>
-        <FileNode Name="02_Create_Tables.sql">
+        <FileNode Name="02_Create_Tables_E3.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>02_Create_Tables.sql</FullPath>
+          <FullPath>02_Create_Tables_E3.sql</FullPath>
         </FileNode>
-        <FileNode Name="03_Create_SP_ABM.sql">
+        <FileNode Name="03_Create_SP_ABM_E3.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:EMANUEL\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>EMANUEL\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>03_Create_SP_ABM.sql</FullPath>
+          <FullPath>03_Create_SP_ABM_E3.sql</FullPath>
         </FileNode>
-        <FileNode Name="04_Testing_SP_ABM.sql">
+        <FileNode Name="04_Testing_SP_ABM_E3.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>04_Testing_SP_ABM.sql</FullPath>
+          <FullPath>04_Testing_SP_ABM_E3.sql</FullPath>
         </FileNode>
-        <FileNode Name="05_Configuracion.sql">
+        <FileNode Name="05_Configuracion_E4.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:EMANUEL\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>EMANUEL\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>05_Configuracion.sql</FullPath>
+          <FullPath>05_Configuracion_E4.sql</FullPath>
         </FileNode>
-        <FileNode Name="06_Create_SP_Importacion.sql">
+        <FileNode Name="06_Create_SP_Importacion_E4.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>06_Create_SP_Importacion.sql</FullPath>
+          <FullPath>06_Create_SP_Importacion_E4.sql</FullPath>
         </FileNode>
-        <FileNode Name="07_Testing_SP_Importacion.sql">
+        <FileNode Name="07_Testing_SP_Importacion_E4.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>07_Testing_SP_Importacion.sql</FullPath>
+          <FullPath>07_Testing_SP_Importacion_E4.sql</FullPath>
         </FileNode>
       </Items>
     </LogicalFolder>
