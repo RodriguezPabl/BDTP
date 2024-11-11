@@ -50,8 +50,8 @@
           <FullPath>02_Create_Tables_E3.sql</FullPath>
         </FileNode>
         <FileNode Name="03_Create_SP_ABM_E3.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:EMANUEL\SQLEXPRESS:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>EMANUEL\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>03_Create_SP_ABM_E3.sql</FullPath>
         </FileNode>
@@ -62,8 +62,8 @@
           <FullPath>04_Testing_SP_ABM_E3.sql</FullPath>
         </FileNode>
         <FileNode Name="05_Configuracion_E4.sql">
-          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:EMANUEL\SQLEXPRESS:True</AssociatedConnectionMoniker>
-          <AssociatedConnSrvName>EMANUEL\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
           <FullPath>05_Configuracion_E4.sql</FullPath>
         </FileNode>

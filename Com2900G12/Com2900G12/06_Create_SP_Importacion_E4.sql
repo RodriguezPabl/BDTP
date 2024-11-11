@@ -1,8 +1,6 @@
 use Com2900G12;
 GO
 
-
-
 CREATE OR ALTER PROCEDURE Sucursal.ImportarSucursal
     @Path VARCHAR(255), 
     @Hoja VARCHAR(255)
@@ -103,8 +101,9 @@ BEGIN
             WHERE S.Descripcion = (Temp.[Cargo])
         );
     
-    INSERT INTO Sucursal.Empleado (Nombre, Apellido, Dni, Direccion, Email, EmailEmpresarial, Cuil, SucursalID, CargoID, Turno) 
+    INSERT INTO Sucursal.Empleado (EmpleadoNum, Nombre, Apellido, Dni, Direccion, Email, EmailEmpresarial, Cuil, SucursalID, CargoID, Turno) 
     SELECT 
+		([Legajo/ID]),
         ([Nombre]), 
         ([Apellido]), 
         ([DNI]), 
@@ -357,19 +356,9 @@ BEGIN
 	
 	UPDATE #TempPI
 	SET Producto = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(Producto, 'Ã©', 'é'), 'Ã±', 'ñ'), 'Ã³', 'ó'), 'Ã¡', 'á'), 'Ãº', 'ú'), 'Ã­', 'í'), 'Âº', 'º'), 'Ãƒº', 'ú'), 'Ã‘', 'Ñ'), 'Ã', 'Á'), '?' , 'ñ'), 'å˜', 'ñ')
-	INSERT INTO Producto.CategoriaProducto(NombreCat,LineaDeProducto)
-    SELECT DISTINCT
-        ([Categoria]),
-		([Categoria])
-    FROM 
-        #TempPI AS Temp
-    WHERE
-        [Categoria] IS NOT NULL 
-        AND NOT EXISTS (
-            SELECT 1
-            FROM Producto.CategoriaProducto AS S
-            WHERE (S.LineaDeProducto = Temp.[Categoria])
-        );
+
+	IF NOT EXISTS (SELECT 1 FROM Producto.CategoriaProducto WHERE NombreCat = 'Importado')
+		INSERT INTO Producto.CategoriaProducto (NombreCat) VALUES ('Importado')
 	
     -- Insertar datos en la tabla Sucursal verificando si ya existen duplicados
 	
@@ -377,7 +366,7 @@ BEGIN
     SELECT DISTINCT
         ([Producto]),
 		([PrecioUnitario]),
-		(SELECT CategoriaID FROM Producto.CategoriaProducto WHERE LineaDeProducto = ([Categoria]))
+		(SELECT CategoriaID FROM Producto.CategoriaProducto WHERE NombreCat = 'Importado')
     FROM 
         #TempPI AS Temp
     WHERE
@@ -441,19 +430,20 @@ BEGIN
 
 	--SELECT * FROM #TempVenta
 	
-	INSERT INTO Venta.Cliente (TipoDeCliente, Genero)
+	INSERT INTO Venta.Cliente (TipoDeCliente, Genero, Nombre)
 	SELECT DISTINCT
 		([Tipo_de_Cliente]),
         CASE 
             WHEN [Genero] = 'Female' THEN 'F'
             WHEN [Genero] = 'Male' THEN 'M'
             ELSE 'O' -- Si el valor es distinto de 'Female' o 'Male', asigna 'O'
-        END
+        END,
+		'ClienteImportado'
 	FROM #TempVenta AS Temp
 	WHERE NOT EXISTS (
 		SELECT 1
 		FROM Venta.Cliente AS C
-		WHERE C.[TipoDeCliente] = [Tipo_de_Cliente] OR C.[Genero] = [Genero]
+		WHERE (C.[TipoDeCliente] = [Tipo_de_Cliente] OR C.[Genero] = [Genero]) AND Nombre = 'ClienteImportado'
 	)
 	
 	INSERT INTO Venta.Factura (FacturaID,TipoDeFactura,Fecha,Hora,Identificador,EmpleadoID,MedioDePagoID,ClienteID)
@@ -463,7 +453,7 @@ BEGIN
 		([Fecha]),
 		([Hora]),
 		([Identificador_de_Pago]),
-		(SELECT EmpleadoID FROM Sucursal.Empleado WHERE EmpleadoID = ([Empleado])),
+		(SELECT EmpleadoID FROM Sucursal.Empleado WHERE EmpleadoNum = ([Empleado])),
 		(SELECT MedioDePagoID FROM Venta.MedioDePago WHERE DescripcionING = ([Medio_de_Pago])),
 		(SELECT ClienteID FROM Venta.Cliente WHERE TipoDeCliente = Temp.Tipo_de_Cliente AND Genero = 
 			CASE 
@@ -471,6 +461,7 @@ BEGIN
 				WHEN Temp.Genero = 'Male' THEN 'M'
 				ELSE 'O' -- Si el valor es distinto de 'Female' o 'Male', asigna 'O'
 			END
+			AND Nombre = 'ClienteImportado'
 		)
 	FROM #TempVenta AS Temp
 	WHERE NOT EXISTS (
@@ -478,6 +469,7 @@ BEGIN
 		FROM Venta.Factura AS F
 		WHERE Temp.[ID_Factura] = F.FacturaID
 	)
+
 	
 	INSERT INTO Venta.DetalleFactura(Cantidad,FacturaID,ProductoID)
 	SELECT

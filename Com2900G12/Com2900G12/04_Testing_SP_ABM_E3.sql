@@ -3,10 +3,10 @@ USE Com2900G12
 -- ##### SP's de Sucursal #####
 SELECT * FROM Sucursal.Sucursal
 --Insercion correcta
-EXEC Sucursal.InsertarSucursal @Ciudad='San Justo', @Telefono='1234-9983', @Direccion='Florencio Varela 114',@Horario='8-21'
-EXEC Sucursal.InsertarSucursal @Ciudad='Ramos Mejia', @Telefono='1234-9984', @Direccion='Av. de Mayo 1123',@Horario='8-21'
+EXEC Sucursal.InsertarSucursal @Ciudad='Moron', @Telefono='1234-9983', @Direccion='Carlos Calvo 114',@Horario='8-21'
+EXEC Sucursal.InsertarSucursal @Ciudad='Haedo', @Telefono='1234-9984', @Direccion='Int. Carrere 1123',@Horario='8-21'
 --Insercion erronea (los campos telefono y direccion son UNIQUE)
-EXEC Sucursal.InsertarSucursal @Ciudad='San Justo', @Telefono='1234-9983', @Direccion='Florencio Varela 114',@Horario='8-21'
+EXEC Sucursal.InsertarSucursal @Ciudad='San Justo', @Telefono='1234-9983', @Direccion='Carlos Calvo 114',@Horario='8-21'
 --Insercion erronea (todos los campos son null)
 EXEC Sucursal.InsertarSucursal
 --Actualizacion correcta
@@ -23,10 +23,10 @@ EXEC Sucursal.BorrarSucursal @SucursalID=1092939
 -- ##### SP's de Cargo #####
 SELECT * FROM Sucursal.Cargo
 --Insercion correcta
-EXEC Sucursal.InsertarCargo @Descripcion='Cajero'
-EXEC Sucursal.InsertarCargo @Descripcion='Supervisor'
+EXEC Sucursal.InsertarCargo 'CajeroSupervisor'
+EXEC Sucursal.InsertarCargo 'GerenteSupervisor'
 --Actualizacion correcta
-EXEC Sucursal.ModificarCargo @CargoID=2, @Descripcion='Gerente'
+EXEC Sucursal.ModificarCargo @CargoID=2, @Descripcion='GerenteSupremo'
 --Borrado exitoso
 EXEC Sucursal.BorrarCargo @CargoID=2
 
@@ -44,59 +44,57 @@ EXEC Sucursal.InsertarEmpleado @Nombre='Roberto',@Apellido='Nogueira',@DNI='1234
 EXEC Sucursal.InsertarEmpleado @Nombre='Roberto',@Apellido='Nogueira',@DNI='12345679',@Direccion='Florencio Varela 333',@Email='rn@alumno.edu.ar',@EmailEmpresarial='rn@empresa.com.ar',
 	@Cuil='20-12345679-4',@Turno='TT',@SucursalID=3789812,@CargoID=3212387
 --Actualizacion exitosa
-EXEC Sucursal.ModificarEmpleado @EmpleadoID=257020, @Nombre='Pedro'
+EXEC Sucursal.ModificarEmpleado @EmpleadoID=1, @Nombre='Pedro'
 --Borrado exitoso
-EXEC Sucursal.BorrarEmpleado @EmpleadoID=257021
+EXEC Sucursal.BorrarEmpleado @EmpleadoID=1
 
 -- ##### SP's de MedioDePago #####
 SELECT * FROM Venta.MedioDePago
 --Insercion exitosa
-EXEC Venta.InsertarMedioDePago @Descripcion='Efectivo'
-EXEC Venta.InsertarMedioDePago @Descripcion='Credito',@Identificador='123545654723455'
+EXEC Venta.InsertarMedioDePago @DescripcionESP='Debito', @DescripcionING='Debit'
+EXEC Venta.InsertarMedioDePago @DescripcionESP='Cupon',@DescripcionING='Coupon'
 --Actualizacion exitosa
-EXEC Venta.ModificarMedioDePago @MedioDePagoID=2, @Descripcion='Credit Card'
+EXEC Venta.ModificarMedioDePago @MedioDePagoID=2, @DescripcionING='Coupen'
 --Borrado exitoso
 EXEC Venta.BorrarMedioDePago @MedioDePagoID=2
 
 -- ##### SP's de Cliente #####
 SELECT * FROM Venta.Cliente
 --Insercion exitosa
-EXEC Venta.InsetarCliente @TipoDeCliente='Miembro',@Genero='M'
-EXEC Venta.InsetarCliente @TipoDeCliente='Normal',@Genero='F'
+EXEC Venta.InsetarCliente @TipoDeCliente='Miembro',@Genero='M',@Nombre='Pepe',@Apellido='Lopez',@DNI='98324755'
+EXEC Venta.InsetarCliente @TipoDeCliente='Normal',@Genero='F',@Nombre='Romina',@Apellido='Martinez',@DNI='98324756'
 --Actualizacion exitosa
-EXEC Venta.ModificarCliente @ClienteID=1, @TipoDeCliente='Member'
+EXEC Venta.ModificarCliente @ClienteID=1, @Apellido='Ruiz'
 --Borrado exitoso
 EXEC Venta.BorrarCliente @ClienteID=2
 
 -- ##### SP's de Factura #####
 SELECT * FROM Venta.Factura
 --Insercion exitosa
-EXEC Venta.InsertarFactura @FacturaID=1,@TipoDeFactura='A',@EmpleadoID=257020,@MedioDePagoID=1,@ClienteID=1
-EXEC Venta.InsertarFactura @FacturaID=2,@TipoDeFactura='B',@EmpleadoID=257020,@MedioDePagoID=1,@ClienteID=2
+EXEC Venta.InsertarFactura @FacturaID=1,@TipoDeFactura='A',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=1,@Identificador=33
+EXEC Venta.InsertarFactura @FacturaID=2,@TipoDeFactura='B',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=2,@Identificador=34
 --Actualizacion exitosa
-EXEC Venta.ModificarFactura @FacturaID=2,@TipoDeFactura='A'
---Borrado exitoso
-EXEC Venta.BorrarFactura @FacturaID=2
+EXEC Venta.ModificarFactura @FacturaNum=2,@TipoDeFactura='C'
+--No se puede borrar factura
 
 -- ##### SP's de CategoriaProducto #####
 SELECT * FROM Producto.CategoriaProducto
 --Insercion exitosa
-EXEC Producto.InsertarCategoriaProducto @NombreCat='Almacen'
-EXEC Producto.InsertarCategoriaProducto @NombreCat='Frescos'
-EXEC Producto.InsertarCategoriaProducto @NombreCat='Limpieza'
-EXEC Producto.InsertarCategoriaProducto @NombreCat='Otros'
+EXEC Producto.InsertarCategoriaProducto @NombreCat='Armaduras'
+EXEC Producto.InsertarCategoriaProducto @NombreCat='Armas'
+EXEC Producto.InsertarCategoriaProducto @NombreCat='Calzados'
 --Actualizacion exitosa
-EXEC Producto.ModificarCategoriaProducto @CategoriaID=4,@NombreCat='Congelados'
+EXEC Producto.ModificarCategoriaProducto @CategoriaID=3,@NombreCat='Calzado',@LineaDeProducto='Calzado'
 --Borrado exitoso
-EXEC Producto.BorrarCategoriaProducto @CategoriaID=4
+EXEC Producto.BorrarCategoriaProducto @CategoriaID=3
 
 -- ##### SP's de Producto #####
 SELECT * FROM Producto.Producto
 --Insercion exitosa
-EXEC Producto.InsertarProducto @Nombre='Banana',@Moneda='ARS', @PrecioUnitario=15,@CategoriaID=2
-EXEC Producto.InsertarProducto @Nombre='Manzana',@Moneda='ARS',@PrecioUnitario=10,@CategoriaID=2
-EXEC Producto.InsertarProducto @Nombre='Pera',@Moneda='ARS',@PrecioUnitario=20,@CategoriaID=2
-EXEC Producto.InsertarProducto @Nombre='Mandarina',@Moneda='ARS',@PrecioUnitario=25,@CategoriaID=2
+EXEC Producto.InsertarProducto @Nombre='Espada1',@Moneda='USD', @PrecioUnitario=15,@CategoriaID=2
+EXEC Producto.InsertarProducto @Nombre='Espada2',@Moneda='USD',@PrecioUnitario=10,@CategoriaID=2
+EXEC Producto.InsertarProducto @Nombre='Casco',@Moneda='USD',@PrecioUnitario=20,@CategoriaID=1
+EXEC Producto.InsertarProducto @Nombre='Botas',@Moneda='USD',@PrecioUnitario=25,@CategoriaID=1
 --Actualizacion exitosa
 EXEC Producto.ModificarProducto @ProductoID=4,@PrecioUnitario=17
 --Borrado exitoso
@@ -105,10 +103,9 @@ EXEC Producto.BorrarProducto @ProductoID=4
 -- ##### SP's de DetalleFactura #####
 SELECT * FROM Venta.DetalleFactura
 --Insercion correcta
-EXEC Venta.InsertarDetalleFactura @Cantidad=15, @FacturaID=1, @ProductoID=1
-EXEC Venta.InsertarDetalleFactura @Cantidad=5, @FacturaID=1, @ProductoID=2
-EXEC Venta.InsertarDetalleFactura @Cantidad=10, @FacturaID=1, @ProductoID=3
+EXEC Venta.InsertarDetalleFactura @Cantidad=1, @FacturaID=1, @ProductoID=1
+EXEC Venta.InsertarDetalleFactura @Cantidad=1, @FacturaID=1, @ProductoID=2
+EXEC Venta.InsertarDetalleFactura @Cantidad=2, @FacturaID=1, @ProductoID=3
 --Actualizacion correcta
-EXEC Venta.ModificarDetalleFactura @NumeroDeItem=2, @Cantidad=10
---Borrado exitoso
-EXEC Venta.BorrarDetalleFactura @NumeroDeItem=3
+EXEC Venta.ModificarDetalleFactura @NumeroDeItem=2, @Cantidad=2
+--No se puede borrar detalle de factura

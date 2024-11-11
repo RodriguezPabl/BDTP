@@ -32,7 +32,8 @@ GO
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Sucursal' AND TABLE_NAME = 'Empleado')
 BEGIN
 	CREATE TABLE Sucursal.Empleado (
-		EmpleadoID INT PRIMARY KEY IDENTITY(257020,1),
+		EmpleadoID INT PRIMARY KEY IDENTITY(1,1),
+		EmpleadoNum INT DEFAULT NULL,
 		Nombre VARCHAR(75) NOT NULL,
 		Apellido VARCHAR(75) NOT NULL,
 		Dni CHAR(8) NOT NULL,
@@ -71,6 +72,9 @@ BEGIN
 		ClienteID INT PRIMARY KEY IDENTITY(1,1),
 		TipoDeCliente VARCHAR(20) NOT NULL,
 		Genero CHAR(1) NOT NULL,
+		Nombre VARCHAR(50),
+		Apellido VARCHAR (50),
+		DNI CHAR(8),
 		FechaBorrado DATE DEFAULT NULL
 	)
 END
@@ -86,7 +90,6 @@ BEGIN
 		Fecha DATE DEFAULT GETDATE(),
 		Hora TIME(0) DEFAULT GETDATE(),
 		Identificador VARCHAR(50),
-		FechaBorrado DATE DEFAULT NULL,
 		EmpleadoID INT NOT NULL,
 		MedioDePagoID INT NOT NULL,
 		ClienteID INT NOT NULL,
@@ -133,9 +136,23 @@ BEGIN
 		Cantidad INT NOT NULL,
 		FacturaID INT NOT NULL,
 		ProductoID INT NOT NULL,
-		FechaBorrado DATE DEFAULT NULL,
 		CONSTRAINT FK_Factura FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaNum),
 		CONSTRAINT FK_Producto FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
+	)
+END
+GO
+
+-- Tabla de nota de credito
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'NotaDeCredito')
+BEGIN
+	CREATE TABLE Venta.NotaDeCredito(
+		NotaDeCreditoID INT IDENTITY(1,1),
+		FechaDeEmision DATETIME DEFAULT GETDATE(),
+		Motivo VARCHAR(50),
+		FacturaID INT NOT NULL,
+		ProductoID INT NOT NULL,
+		CONSTRAINT FK_FacturaNdC FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaNum),
+		CONSTRAINT FK_ProductoNdC FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
 	)
 END
 GO
