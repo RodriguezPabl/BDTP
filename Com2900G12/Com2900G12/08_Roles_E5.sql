@@ -1,4 +1,8 @@
 -- Crear roles
+
+use Com2900G12;
+GO
+
 CREATE ROLE Cliente;
 CREATE ROLE Empleado;
 CREATE ROLE Supervisor;
