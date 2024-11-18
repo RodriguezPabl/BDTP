@@ -576,12 +576,16 @@ BEGIN
 		MedioDePagoID = @MedioDePagoID,
 		ClienteID = @ClienteID
 	WHERE VentaID = @VentaID
+
+	INSERT INTO Venta.Factura (TipoDeFactura, Fecha, Total, TotalConIva, VentaID)
+	VALUES (@TipoDeFactura, GETDATE(), (SELECT Total FROM Venta.Venta WHERE VentaID = @VentaID), (SELECT TotalConIva FROM Venta.Venta WHERE VentaID = @VentaID), @VentaID)
+
 END;
 GO
 
 CREATE OR ALTER PROCEDURE Venta.ModificarVenta
     @VentaID INT,
-	@VentaNum VARCHAR(25),
+	@VentaNum VARCHAR(25) = NULL,
     @TipoDeFactura CHAR(1) = NULL,
 	@Identificador VARCHAR(50) = NULL,
     @EmpleadoID INT = NULL,
@@ -589,8 +593,6 @@ CREATE OR ALTER PROCEDURE Venta.ModificarVenta
 	@ClienteID INT = NULL
 AS
 BEGIN
-    DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
-
     -- Verificar si la Factura existe
     IF NOT EXISTS (SELECT 1 FROM Venta.Venta WHERE VentaID = @VentaID)
     BEGIN
@@ -603,11 +605,20 @@ BEGIN
     SET 
 		VentaNum = COALESCE(@VentaNum, VentaNum),
         TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
+		Fecha = GETDATE(),
+		Hora = GETDATE(),
 		Identificador = COALESCE(@Identificador, Identificador),
         EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
         MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
 		ClienteID = COALESCE(@ClienteID, ClienteID)
     WHERE VentaID = @VentaID;
+
+	IF @TipoDeFactura IS NOT NULL
+	BEGIN
+		UPDATE Venta.Factura
+		SET TipoDeFactura = @TipoDeFactura
+		WHERE VentaID = @VentaID
+	END
 END;
 GO
 
@@ -774,6 +785,7 @@ END;
 GO
 
 -- SP's de Factura
+/*
 CREATE OR ALTER PROCEDURE Venta.InsertarFactura
     @FacturaID INT = NULL,
     @TipoDeFactura CHAR(1) = NULL,
@@ -846,6 +858,7 @@ BEGIN
     WHERE FacturaNum = @FacturaNum;
 END;
 GO -- cambiar esto
+*/
 
 -- SP's de DetalleVenta
 CREATE OR ALTER PROCEDURE Venta.InsertarDetalleVenta
@@ -906,7 +919,6 @@ GO
 CREATE OR ALTER PROCEDURE Venta.ModificarDetalleVenta
     @NumeroDeItem INT,
     @Cantidad INT = NULL,
-    @VentaID CHAR(11) = NULL,
     @ProductoID INT = NULL
 AS
 BEGIN
@@ -915,10 +927,6 @@ BEGIN
     -- Verificar si el DetalleVenta existe
     IF NOT EXISTS (SELECT 1 FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
         SET @Errores = @Errores + 'Detalle de Venta no encontrado. ';
-
-    -- Verificar si la FacturaID existe
-    IF @VentaID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE VentaID = @VentaID)
-        SET @Errores = @Errores + 'Venta no encontrada. ';
 
     -- Verificar si el ProductoID existe
     IF @ProductoID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Producto.Producto WHERE ProductoID = @ProductoID)
@@ -931,16 +939,28 @@ BEGIN
         RETURN;
     END
 
-	IF @Cantidad IS NOT NULL
+	DECLARE @Precio DECIMAL(7,2)
+	IF (@Cantidad IS NOT NULL OR @ProductoID IS NOT NULL)
 	BEGIN
-		DECLARE @Precio DECIMAL (7,2) = (SELECT Precio FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+		IF @ProductoID IS NOT NULL
+			SET @Precio = (SELECT PrecioUnitario FROM Producto.Producto WHERE ProductoID = @ProductoID)
+		ELSE
+			SET @Precio = (SELECT Precio FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+
+		IF @Cantidad IS NULL
+			SET @Cantidad = (SELECT Cantidad FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+
 		DECLARE @Subtotal DECIMAL (9,2) = (SELECT Subtotal FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
 		DECLARE @Venta INT = (SELECT VentaID FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
 
+		SELECT @Precio AS Precio, @Subtotal AS SubtotalAntes, @Venta AS VentaID, @Cantidad AS Cant
+
 		UPDATE Venta.Venta
 		SET Total = Total - @Subtotal
+		WHERE VentaID = @Venta
 
 		SET @Subtotal = @Cantidad * @Precio
+		SELECT @Subtotal AS SubtotalDespues
 
 		UPDATE Venta.DetalleVenta
 		SET
@@ -956,21 +976,32 @@ BEGIN
 		SET
 			TotalConIva = Total * 1.21
 		WHERE VentaID = @Venta
+
+		UPDATE Venta.Factura
+		SET 
+			Total = (SELECT Total FROM Venta.Venta WHERE VentaID = @Venta),
+			TotalConIva = (SELECT TotalConIva FROM Venta.Venta WHERE VentaID = @Venta)
+		WHERE VentaID = @Venta
 	END
 
     -- Realizar la actualización
     UPDATE Venta.DetalleVenta
     SET 
         Cantidad = COALESCE(@Cantidad, Cantidad),
-        VentaID = COALESCE(@VentaID, VentaID),
-        ProductoID = COALESCE(@ProductoID, ProductoID)
+        ProductoID = COALESCE(@ProductoID, ProductoID),
+		Precio = COALESCE(@Precio, Precio)
     WHERE NumeroDeItem = @NumeroDeItem;
 END;
 GO 
 
+/*
 EXEC Venta.CrearVenta
-EXEC Venta.InsertarDetalleVenta 1, 3, 1
-EXEC Venta.InsertarDetalleVenta 2, 3, 2
-EXEC Venta.ModificarDetalleVenta @NumeroDeItem=4, @Cantidad=1
+EXEC Venta.InsertarDetalleVenta 1, 3, 2
+EXEC Venta.InsertarDetalleVenta 2, 3, 3
+EXEC Venta.ModificarDetalleVenta @NumeroDeItem=5, @ProductoID = 1
+EXEC Venta.ModificarVenta @VentaID=3, @TipoDeFactura='C'
+SELECT * FROM Producto.Producto
 SELECT * FROM Venta.DetalleVenta
 SELECT * FROM Venta.Venta
+SELECT * FROM Venta.Factura
+*/
