@@ -516,10 +516,19 @@ BEGIN
 	WHERE ClienteID = @ClienteID
 END
 GO
-	
--- SP's de Factura
-CREATE OR ALTER PROCEDURE Venta.InsertarFactura
-    @FacturaID INT = NULL,
+
+-- SP's de Venta
+
+CREATE OR ALTER PROCEDURE Venta.CrearVenta
+AS
+BEGIN
+	INSERT INTO Venta.Venta (Total) VALUES (0)
+END
+GO
+
+CREATE OR ALTER PROCEDURE Venta.CompletarVenta
+	@VentaID INT = NULL,
+    @VentaNum VARCHAR(25) = NULL,
     @TipoDeFactura CHAR(1) = NULL,
 	@Identificador VARCHAR(50) = NULL,
     @EmpleadoID INT = NULL,
@@ -530,9 +539,9 @@ BEGIN
     DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
 
     -- Verificar si alguno de los parámetros es NULL
-    IF @FacturaID IS NULL
-        SET @Errores = @Errores + 'El parámetro FacturaID no puede ser NULL. ';
-    
+	IF @VentaID IS NULL
+		SET @Errores = @Errores + 'El parámetro VentaID no puede ser NULL. ';
+
     IF @TipoDeFactura IS NULL
         SET @Errores = @Errores + 'El parámetro TipoDeFactura no puede ser NULL. ';
 
@@ -556,13 +565,23 @@ BEGIN
     END
 
     -- Insertar los datos en la tabla
-    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura,Identificador, EmpleadoID, MedioDePagoID, ClienteID)
-    VALUES (@FacturaID, @TipoDeFactura, @Identificador, @EmpleadoID, @MedioDePagoID, @ClienteID);
+	UPDATE Venta.Venta
+	SET
+		VentaNum = @VentaNum,
+		TipoDeFactura = @TipoDeFactura,
+		Fecha = GETDATE(),
+		Hora = GETDATE(),
+		Identificador = @Identificador,
+		EmpleadoID = @EmpleadoID,
+		MedioDePagoID = @MedioDePagoID,
+		ClienteID = @ClienteID
+	WHERE VentaID = @VentaID
 END;
 GO
 
-CREATE OR ALTER PROCEDURE Venta.ModificarFactura
-    @FacturaNum INT,
+CREATE OR ALTER PROCEDURE Venta.ModificarVenta
+    @VentaID INT,
+	@VentaNum VARCHAR(25),
     @TipoDeFactura CHAR(1) = NULL,
 	@Identificador VARCHAR(50) = NULL,
     @EmpleadoID INT = NULL,
@@ -573,21 +592,22 @@ BEGIN
     DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
 
     -- Verificar si la Factura existe
-    IF NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE FacturaNum = @FacturaNum)
+    IF NOT EXISTS (SELECT 1 FROM Venta.Venta WHERE VentaID = @VentaID)
     BEGIN
-        RAISERROR('Factura no encontrada.', 16, 1);  -- Lanzamos los errores concatenados
+        RAISERROR('Venta no encontrada.', 16, 1);  -- Lanzamos los errores concatenados
         RETURN;
     END
 
     -- Realizar la actualización
-    UPDATE Venta.Factura
+    UPDATE Venta.Venta
     SET 
+		VentaNum = COALESCE(@VentaNum, VentaNum),
         TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
 		Identificador = COALESCE(@Identificador, Identificador),
         EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
         MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
 		ClienteID = COALESCE(@ClienteID, ClienteID)
-    WHERE FacturaNum = @FacturaNum;
+    WHERE VentaID = @VentaID;
 END;
 GO
 
@@ -753,10 +773,84 @@ BEGIN
 END;
 GO
 
--- SP's de DetalleFactura
-CREATE OR ALTER PROCEDURE Venta.InsertarDetalleFactura
+-- SP's de Factura
+CREATE OR ALTER PROCEDURE Venta.InsertarFactura
+    @FacturaID INT = NULL,
+    @TipoDeFactura CHAR(1) = NULL,
+	@Identificador VARCHAR(50) = NULL,
+    @EmpleadoID INT = NULL,
+    @MedioDePagoID INT = NULL,
+	@ClienteID INT = NULL
+AS
+BEGIN
+    DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
+
+    -- Verificar si alguno de los parámetros es NULL
+    IF @FacturaID IS NULL
+        SET @Errores = @Errores + 'El parámetro FacturaID no puede ser NULL. ';
+    
+    IF @TipoDeFactura IS NULL
+        SET @Errores = @Errores + 'El parámetro TipoDeFactura no puede ser NULL. ';
+
+	IF @Identificador IS NULL
+        SET @Errores = @Errores + 'El parámetro identificador no puede ser NULL. ';
+    
+    IF @EmpleadoID IS NULL
+        SET @Errores = @Errores + 'El parámetro EmpleadoID no puede ser NULL. ';
+    
+    IF @MedioDePagoID IS NULL
+        SET @Errores = @Errores + 'El parámetro MedioDePagoID no puede ser NULL. ';
+
+    IF @ClienteID IS NULL
+        SET @Errores = @Errores + 'El parámetro ClienteID no puede ser NULL. ';
+    
+    -- Si hay errores, usar RAISEERROR para devolverlos
+    IF @Errores <> ''
+    BEGIN
+        RAISERROR(@Errores, 16, 1);
+        RETURN;
+    END
+
+    -- Insertar los datos en la tabla
+    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura,Identificador, EmpleadoID, MedioDePagoID, ClienteID)
+    VALUES (@FacturaID, @TipoDeFactura, @Identificador, @EmpleadoID, @MedioDePagoID, @ClienteID);
+END;
+GO -- cabmiar esto
+
+CREATE OR ALTER PROCEDURE Venta.ModificarFactura
+    @FacturaNum INT,
+    @TipoDeFactura CHAR(1) = NULL,
+	@Identificador VARCHAR(50) = NULL,
+    @EmpleadoID INT = NULL,
+    @MedioDePagoID INT = NULL,
+	@ClienteID INT = NULL
+AS
+BEGIN
+    DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
+
+    -- Verificar si la Factura existe
+    IF NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE FacturaNum = @FacturaNum)
+    BEGIN
+        RAISERROR('Factura no encontrada.', 16, 1);  -- Lanzamos los errores concatenados
+        RETURN;
+    END
+
+    -- Realizar la actualización
+    UPDATE Venta.Factura
+    SET 
+        TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
+		Identificador = COALESCE(@Identificador, Identificador),
+        EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
+        MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
+		ClienteID = COALESCE(@ClienteID, ClienteID)
+    WHERE FacturaNum = @FacturaNum;
+END;
+GO -- cambiar esto
+
+-- SP's de DetalleVenta
+CREATE OR ALTER PROCEDURE Venta.InsertarDetalleVenta
     @Cantidad INT = NULL,
-    @FacturaID CHAR(11) = NULL,
+    @VentaID INT = NULL,
     @ProductoID INT = NULL
 AS
 BEGIN
@@ -766,15 +860,15 @@ BEGIN
     IF @Cantidad IS NULL
         SET @Errores = @Errores + 'El parámetro Cantidad no puede ser NULL. ';
     
-    IF @FacturaID IS NULL
-        SET @Errores = @Errores + 'El parámetro FacturaID no puede ser NULL. ';
+    IF @VentaID IS NULL
+        SET @Errores = @Errores + 'El parámetro VentaID no puede ser NULL. ';
     
     IF @ProductoID IS NULL
         SET @Errores = @Errores + 'El parámetro ProductoID no puede ser NULL. ';
     
-    -- Verificar si la factura existe
-    IF NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE FacturaID = @FacturaID)
-        SET @Errores = @Errores + 'La factura especificada no existe. ';
+    -- Verificar si la Venta existe
+    IF NOT EXISTS (SELECT 1 FROM Venta.Venta WHERE VentaID = @VentaID)
+        SET @Errores = @Errores + 'La Venta especificada no existe. ';
     
     -- Verificar si el producto existe
     IF NOT EXISTS (SELECT 1 FROM Producto.Producto WHERE ProductoID = @ProductoID)
@@ -787,28 +881,44 @@ BEGIN
         RETURN;
     END
 
+	DECLARE @Precio DECIMAL(7,2)
+	SET @Precio = (SELECT PrecioUnitario FROM Producto.Producto WHERE ProductoID = @ProductoID)
+	DECLARE @Subtotal DECIMAL(9,2)
+	SET @Subtotal = @Cantidad * @Precio
+
     -- Insertar los datos en la tabla
-    INSERT INTO Venta.DetalleFactura (Cantidad, FacturaID, ProductoID)
-    VALUES (@Cantidad, @FacturaID, @ProductoID);
+    INSERT INTO Venta.DetalleVenta (Cantidad, Precio, Subtotal, VentaID, ProductoID)
+    VALUES (@Cantidad, @Precio, @Subtotal, @VentaID, @ProductoID);
+
+	UPDATE Venta.Venta
+	SET 
+		Total = Total + @Subtotal
+	WHERE VentaID = @VentaID
+
+	UPDATE Venta.Venta
+	SET 
+		TotalConIva = Total * 1.21
+	WHERE VentaID = @VentaID
+
 END;
 GO
 
-CREATE OR ALTER PROCEDURE Venta.ModificarDetalleFactura
+CREATE OR ALTER PROCEDURE Venta.ModificarDetalleVenta
     @NumeroDeItem INT,
     @Cantidad INT = NULL,
-    @FacturaID CHAR(11) = NULL,
+    @VentaID CHAR(11) = NULL,
     @ProductoID INT = NULL
 AS
 BEGIN
     DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
 
-    -- Verificar si el DetalleFactura existe
-    IF NOT EXISTS (SELECT 1 FROM Venta.DetalleFactura WHERE NumeroDeItem = @NumeroDeItem)
-        SET @Errores = @Errores + 'Detalle de factura no encontrado. ';
+    -- Verificar si el DetalleVenta existe
+    IF NOT EXISTS (SELECT 1 FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+        SET @Errores = @Errores + 'Detalle de Venta no encontrado. ';
 
     -- Verificar si la FacturaID existe
-    IF @FacturaID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE FacturaID = @FacturaID)
-        SET @Errores = @Errores + 'Factura no encontrada. ';
+    IF @VentaID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE VentaID = @VentaID)
+        SET @Errores = @Errores + 'Venta no encontrada. ';
 
     -- Verificar si el ProductoID existe
     IF @ProductoID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM Producto.Producto WHERE ProductoID = @ProductoID)
@@ -821,12 +931,46 @@ BEGIN
         RETURN;
     END
 
+	IF @Cantidad IS NOT NULL
+	BEGIN
+		DECLARE @Precio DECIMAL (7,2) = (SELECT Precio FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+		DECLARE @Subtotal DECIMAL (9,2) = (SELECT Subtotal FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+		DECLARE @Venta INT = (SELECT VentaID FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
+
+		UPDATE Venta.Venta
+		SET Total = Total - @Subtotal
+
+		SET @Subtotal = @Cantidad * @Precio
+
+		UPDATE Venta.DetalleVenta
+		SET
+			Subtotal = @Subtotal
+		WHERE NumeroDeItem = @NumeroDeItem
+
+		UPDATE Venta.Venta
+		SET
+			Total = Total + @Subtotal
+		WHERE VentaID = @Venta
+
+		UPDATE Venta.Venta
+		SET
+			TotalConIva = Total * 1.21
+		WHERE VentaID = @Venta
+	END
+
     -- Realizar la actualización
-    UPDATE Venta.DetalleFactura
+    UPDATE Venta.DetalleVenta
     SET 
         Cantidad = COALESCE(@Cantidad, Cantidad),
-        FacturaID = COALESCE(@FacturaID, FacturaID),
+        VentaID = COALESCE(@VentaID, VentaID),
         ProductoID = COALESCE(@ProductoID, ProductoID)
     WHERE NumeroDeItem = @NumeroDeItem;
 END;
-GO
+GO 
+
+EXEC Venta.CrearVenta
+EXEC Venta.InsertarDetalleVenta 1, 3, 1
+EXEC Venta.InsertarDetalleVenta 2, 3, 2
+EXEC Venta.ModificarDetalleVenta @NumeroDeItem=4, @Cantidad=1
+SELECT * FROM Venta.DetalleVenta
+SELECT * FROM Venta.Venta

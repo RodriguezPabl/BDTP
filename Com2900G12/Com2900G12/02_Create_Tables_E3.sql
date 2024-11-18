@@ -110,19 +110,21 @@ BEGIN
 END
 GO
 
--- Tabla de factura
-IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Factura')
+-- Tabla de venta
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Venta')
 BEGIN
-	CREATE TABLE Venta.Factura (
-		FacturaNum INT PRIMARY KEY IDENTITY(1,1),
-		FacturaID VARCHAR(25),
-		TipoDeFactura CHAR(1)  NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
-		Fecha DATE DEFAULT GETDATE(),
-		Hora TIME(0) DEFAULT GETDATE(),
-		Identificador VARCHAR(50),
-		EmpleadoID INT NOT NULL,
-		MedioDePagoID INT NOT NULL,
-		ClienteID INT NOT NULL,
+	CREATE TABLE Venta.Venta (
+		VentaID INT PRIMARY KEY IDENTITY(1,1),
+		VentaNum VARCHAR(25) DEFAULT NULL,
+		TipoDeFactura CHAR(1) DEFAULT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
+		Fecha DATE DEFAULT NULL,
+		Hora TIME(0) DEFAULT NULL,
+		Identificador VARCHAR(50) DEFAULT NULL,
+		Total DECIMAL(9,2),
+		TotalConIva DECIMAL(9,2),
+		EmpleadoID INT DEFAULT NULL,
+		MedioDePagoID INT DEFAULT NULL,
+		ClienteID INT DEFAULT NULL,
 		CONSTRAINT FK_Empleado FOREIGN KEY (EmpleadoID) REFERENCES Sucursal.Empleado(EmpleadoID),
 		CONSTRAINT FK_MedioDePago FOREIGN KEY (MedioDePagoID) REFERENCES Venta.MedioDePago(MedioDePagoID),
 		CONSTRAINT FK_Cliente FOREIGN KEY (ClienteID) REFERENCES Venta.Cliente(ClienteID)
@@ -158,15 +160,41 @@ BEGIN
 END
 GO
 
--- Tabla de detalle de la factura
-IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'DetalleFactura')
+-- Tabla de factura
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Factura')
 BEGIN
-	CREATE TABLE Venta.DetalleFactura(
+	CREATE TABLE Venta.Factura(
+		FacturaID INT PRIMARY KEY IDENTITY(1,1),
+		FacturaNum VARCHAR(25),
+		TipoDeFactura CHAR(1)  NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
+		Fecha DATE DEFAULT GETDATE(),
+		Hora TIME(0) DEFAULT GETDATE(),
+		Identificador VARCHAR(50),
+		Total DECIMAL(9,2),
+		TotalConIva DECIMAL(9,2),
+		VentaID INT NOT NULL,
+		EmpleadoID INT NOT NULL,
+		MedioDePagoID INT NOT NULL,
+		ClienteID INT NOT NULL,
+		CONSTRAINT FK_EmpleadoF FOREIGN KEY (EmpleadoID) REFERENCES Sucursal.Empleado(EmpleadoID),
+		CONSTRAINT FK_MedioDePagoF FOREIGN KEY (MedioDePagoID) REFERENCES Venta.MedioDePago(MedioDePagoID),
+		CONSTRAINT FK_ClienteF FOREIGN KEY (ClienteID) REFERENCES Venta.Cliente(ClienteID),
+		CONSTRAINT FK_VentaF FOREIGN KEY (VentaID) REFERENCES Venta.Venta(VentaID),
+	)
+END
+GO
+
+-- Tabla de detalle de la venta
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'DetalleVenta')
+BEGIN
+	CREATE TABLE Venta.DetalleVenta(
 		NumeroDeItem INT PRIMARY KEY IDENTITY(1,1),
 		Cantidad INT NOT NULL,
-		FacturaID INT NOT NULL,
+		Subtotal DECIMAL(9,2),
+		Precio DECIMAL(7,2),
+		VentaID INT NOT NULL,
 		ProductoID INT NOT NULL,
-		CONSTRAINT FK_Factura FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaNum),
+		CONSTRAINT FK_Venta FOREIGN KEY (VentaID) REFERENCES Venta.Venta(VentaID),
 		CONSTRAINT FK_Producto FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
 	)
 END
@@ -181,7 +209,7 @@ BEGIN
 		Motivo VARCHAR(50),
 		FacturaID INT NOT NULL,
 		ProductoID INT NOT NULL,
-		CONSTRAINT FK_FacturaNdC FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaNum),
+		CONSTRAINT FK_FacturaNdC FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaID),
 		CONSTRAINT FK_ProductoNdC FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
 	)
 END

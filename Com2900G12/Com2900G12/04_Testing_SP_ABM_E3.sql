@@ -42,7 +42,7 @@ EXEC Sucursal.InsertarSucursal
 --Actualizacion correcta
 EXEC Sucursal.ModificarSucursal @SucursalID=2, @Telefono='4899-4321'
 --Actualizacion Erronea (el numero de sucrusal no existe y los campos telefono y direccion son UNIQUE)
-EXEC Sucursal.ModificarSucursal @SucursalID=1092939, @Telefono='4899-4321',@Direccion='Florencio Varela 114'
+EXEC Sucursal.ModificarSucursal @SucursalID=1092939, @Telefono='4899-4321',@Direccion='Carlos Calvo 114'
 --Borrado correcto
 EXEC Sucursal.BorrarSucursal @SucursalID=2
 --Borrado erroneo (sucursal no encontrada)
@@ -98,14 +98,16 @@ EXEC Venta.ModificarCliente @ClienteID=1, @Apellido='Ruiz'
 --Borrado exitoso
 EXEC Venta.BorrarCliente @ClienteID=2
 
+/*
 -- ##### SP's de Factura #####
 SELECT * FROM Venta.Factura
 --Insercion exitosa
-EXEC Venta.InsertarFactura @FacturaID=1,@TipoDeFactura='A',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=1,@Identificador=33
+EXEC Venta.CompletarVenta @VentaID=3, @VentaNum=1,@TipoDeFactura='A',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=1,@Identificador=33
 EXEC Venta.InsertarFactura @FacturaID=2,@TipoDeFactura='B',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=2,@Identificador=34
 --Actualizacion exitosa
 EXEC Venta.ModificarFactura @FacturaNum=2,@TipoDeFactura='C'
 --No se puede borrar factura
+*/
 
 -- ##### SP's de CategoriaProducto #####
 SELECT * FROM Producto.CategoriaProducto
@@ -130,6 +132,7 @@ EXEC Producto.ModificarProducto @ProductoID=4,@PrecioUnitario=17
 --Borrado exitoso
 EXEC Producto.BorrarProducto @ProductoID=4
 
+/*
 -- ##### SP's de DetalleFactura #####
 SELECT * FROM Venta.DetalleFactura
 --Insercion correcta
@@ -139,3 +142,4 @@ EXEC Venta.InsertarDetalleFactura @Cantidad=2, @FacturaID=1, @ProductoID=3
 --Actualizacion correcta
 EXEC Venta.ModificarDetalleFactura @NumeroDeItem=2, @Cantidad=2
 --No se puede borrar detalle de factura
+*/
