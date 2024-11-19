@@ -166,7 +166,7 @@ BEGIN
 	CREATE TABLE Venta.Factura(
 		FacturaID INT PRIMARY KEY IDENTITY(1,1),
 		TipoDeFactura CHAR(1)  NOT NULL CHECK (TipoDeFactura IN ('A', 'B', 'C')),
-		Fecha DATETIME DEFAULT GETDATE(),
+		Fecha DATE DEFAULT GETDATE(),
 		Total DECIMAL(9,2),
 		TotalConIva DECIMAL(9,2),
 		VentaID INT NOT NULL,

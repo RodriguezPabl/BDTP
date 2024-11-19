@@ -429,8 +429,8 @@ BEGIN
         Tipo_de_Cliente VARCHAR(50),
         Genero VARCHAR(10),
         Producto VARCHAR(100),
-        Precio_Unitario VARCHAR(50),
-        Cantidad VARCHAR(50),
+        Precio_Unitario DECIMAL(7,2),
+        Cantidad INT,
         Fecha VARCHAR(50),
         Hora VARCHAR(50),
         Medio_de_Pago VARCHAR(50),
@@ -497,8 +497,8 @@ BEGIN
 	FROM #TempVenta AS Temp
 	WHERE NOT EXISTS (
 		SELECT 1
-		FROM Venta.Factura AS F
-		WHERE Temp.[ID_Factura] = F.FacturaID
+		FROM Venta.Venta AS F
+		WHERE Temp.[ID_Factura] = F.VentaNum
 	)
 
 	INSERT INTO Venta.DetalleVenta(Cantidad,VentaID,ProductoID,Precio,Subtotal)
@@ -508,7 +508,7 @@ BEGIN
 		(SELECT TOP 1 ProductoID FROM Producto.Producto WHERE Nombre = ([Producto])),
 		([Precio_Unitario]),
 		CASE
-			WHEN (SELECT Moneda FROM Producto.Producto WHERE Nombre = ([Producto])) = 'USD' THEN
+			WHEN (SELECT TOP 1 Moneda FROM Producto.Producto WHERE Nombre = ([Producto])) = 'USD' THEN
 				([Cantidad] * [Precio_Unitario]) * (SELECT Venta FROM TipoDeCambio WHERE Moneda = 'USD')
 			ELSE
 				([Cantidad] * [Precio_Unitario])
@@ -545,22 +545,13 @@ BEGIN
 	-- Insertar los datos en la tabla Venta.Factura
 	INSERT INTO Venta.Factura (TipoDeFactura, Fecha, Total, TotalConIva, VentaID)
 	SELECT
-		[TipoDeFactura],  -- Tipo de factura (A, B, C)
-		[Fecha],            -- Fecha de la venta
-		ISNULL((
-			SELECT SUM(DV.Subtotal)
-			FROM Venta.DetalleVenta DV
-			WHERE DV.VentaID = V.VentaID
-		), 0) AS Total,  -- Sumar los subtotales para calcular el total
-		ISNULL((
-			SELECT SUM(DV.Subtotal)
-			FROM Venta.DetalleVenta DV
-			WHERE DV.VentaID = V.VentaID
-		), 0) * 1.21 AS TotalConIva,  -- Calcular TotalConIva (suponiendo IVA del 16%)
+		V.[TipoDeFactura],  -- Tipo de factura (A, B, C)
+		V.[Fecha],            -- Fecha de la venta
+		V.[Total],
+		V.[TotalConIva],
 		V.VentaID  -- Asociar la venta
-	FROM Venta.Venta V JOIN #TempVenta Temp ON v.VentaNum = Temp.ID_Factura
-	WHERE V.VentaNum = Temp.ID_Factura
-	AND NOT EXISTS (
+	FROM Venta.Venta V
+	WHERE NOT EXISTS (
     -- Verificar si ya existe una factura con el mismo VentaNum (ID_Factura)
     SELECT 1
     FROM Venta.Factura F
