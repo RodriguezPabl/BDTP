@@ -31,6 +31,9 @@ MIEL. Solo uno de los miembros del grupo debe hacer la entrega. */
 USE Com2900G12
 GO
 
+IF OBJECT_ID('Sucursal.Sucursal', 'U') IS NOT NULL
+    DROP TABLE Sucursal.Sucursal
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Sucursal' AND TABLE_NAME = 'Sucursal')
 BEGIN
 	CREATE TABLE Sucursal.Sucursal (
@@ -48,6 +51,9 @@ END
 GO
 
 -- Tabla de cargos
+IF OBJECT_ID('Sucursal.Cargo', 'U') IS NOT NULL
+    DROP TABLE Sucursal.Cargo
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Sucursal' AND TABLE_NAME = 'Cargo')
 BEGIN
 	CREATE TABLE Sucursal.Cargo (
@@ -59,6 +65,9 @@ END
 GO
 
 -- Tabla de empleados
+IF OBJECT_ID('Sucursal.Empleado', 'U') IS NOT NULL
+    DROP TABLE Sucursal.Empleado
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Sucursal' AND TABLE_NAME = 'Empleado')
 BEGIN
 	CREATE TABLE Sucursal.Empleado (
@@ -84,6 +93,9 @@ END
 GO
 
 -- Tabla de medios de pago
+IF OBJECT_ID('Venta.MedioDePago', 'U') IS NOT NULL
+    DROP TABLE Venta.MedioDePago
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'MedioDePago')
 BEGIN
 	CREATE TABLE Venta.MedioDePago (
@@ -96,6 +108,9 @@ END
 GO
 
 -- Tabla cliente
+IF OBJECT_ID('Venta.Cliente', 'U') IS NOT NULL
+    DROP TABLE Venta.Cliente
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Cliente')
 BEGIN
 	CREATE TABLE Venta.Cliente (
@@ -111,6 +126,10 @@ END
 GO
 
 -- Tabla de venta
+
+IF OBJECT_ID('Venta.Venta', 'U') IS NOT NULL
+    DROP TABLE Venta.Venta
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Venta')
 BEGIN
 	CREATE TABLE Venta.Venta (
@@ -133,6 +152,9 @@ END
 GO
 
 -- Tabla de categoria de productos
+IF OBJECT_ID('Producto.CategoriaProducto', 'U') IS NOT NULL
+    DROP TABLE Producto.CategoriaProducto
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Producto' AND TABLE_NAME = 'CategoriaProducto')
 BEGIN
 	CREATE TABLE Producto.CategoriaProducto(
@@ -145,6 +167,9 @@ END
 GO
 
 -- Tabla de producto
+IF OBJECT_ID('Producto.Producto', 'U') IS NOT NULL
+    DROP TABLE Producto.Producto
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Producto' AND TABLE_NAME = 'Producto')
 BEGIN
 	CREATE TABLE Producto.Producto(
@@ -161,6 +186,9 @@ END
 GO
 
 -- Tabla de factura
+IF OBJECT_ID('Venta.Factura', 'U') IS NOT NULL
+    DROP TABLE Venta.Factura
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'Factura')
 BEGIN
 	CREATE TABLE Venta.Factura(
@@ -176,6 +204,9 @@ END
 GO
 
 -- Tabla de detalle de la venta
+IF OBJECT_ID('Venta.DetalleVenta', 'U') IS NOT NULL
+    DROP TABLE Venta.DetalleVenta
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'DetalleVenta')
 BEGIN
 	CREATE TABLE Venta.DetalleVenta(
@@ -191,7 +222,11 @@ BEGIN
 END
 GO
 
+/* PARA LA ENTREGA 5
 -- Tabla de nota de credito
+IF OBJECT_ID('Venta.NotaDeCredito', 'U') IS NOT NULL
+    DROP TABLE Venta.NotaDeCredito
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'NotaDeCredito')
 BEGIN
 	CREATE TABLE Venta.NotaDeCredito(
@@ -205,8 +240,12 @@ BEGIN
 	)
 END
 GO
+*/
 
 -- Tabla de tipo de cambio
+IF OBJECT_ID('Venta.NotaDeCambio', 'U') IS NOT NULL
+    DROP TABLE Venta.NotaDeCambio
+
 IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'TipoDeCambio')
 BEGIN
 	CREATE TABLE Venta.TipoDeCambio(

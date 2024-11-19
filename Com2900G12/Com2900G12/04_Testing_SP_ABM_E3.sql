@@ -126,7 +126,7 @@ SELECT * FROM Venta.TipoDeCambio
 --insersion exitosa
 EXEC Venta.InsertarTipoDeCambio 'USD',972.85,1031.15
 --modificacion exitosa
-EXEC Venta.ModificarTipoDeCambio @TipoDeCambioID=1,@Compra=972.85
+EXEC Venta.ModificarTipoDeCambio @TipoDeCambioID=1,@Compra=972.86
 
 -- #### SP's de Venta y DetalleVenta #####
 SELECT * FROM Producto.Producto
