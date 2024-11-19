@@ -205,3 +205,16 @@ BEGIN
 	)
 END
 GO
+
+-- Tabla de tipo de cambio
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'Venta' AND TABLE_NAME = 'TipoDeCambio')
+BEGIN
+	CREATE TABLE Venta.TipoDeCambio(
+		TipoDeCambioID INT IDENTITY(1,1),
+		Moneda CHAR(3),
+		Compra DECIMAL(7,2),
+		Venta DECIMAL(7,2),
+		FechaDeEmision DATETIME DEFAULT GETDATE()
+	)
+END
+GO

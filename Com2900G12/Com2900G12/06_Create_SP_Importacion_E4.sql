@@ -413,7 +413,7 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE Venta.ImportarClienteFactura
+CREATE OR ALTER PROCEDURE Venta.ImportarVenta
     @RutaArchivo VARCHAR(255) -- Ruta del archivo CSV
 AS
 BEGIN
@@ -476,7 +476,7 @@ BEGIN
 		WHERE (C.[TipoDeCliente] = [Tipo_de_Cliente] OR C.[Genero] = [Genero]) AND Nombre = 'ClienteImportado'
 	)
 	
-	INSERT INTO Venta.Factura (FacturaID,TipoDeFactura,Fecha,Hora,Identificador,EmpleadoID,MedioDePagoID,ClienteID)
+	INSERT INTO Venta.Venta (VentaNum,TipoDeFactura,Fecha,Hora,Identificador,EmpleadoID,MedioDePagoID,ClienteID,Total)
 	SELECT
 		([ID_Factura]),
 		([Tipo_de_Factura]),
@@ -492,7 +492,8 @@ BEGIN
 				ELSE 'O' -- Si el valor es distinto de 'Female' o 'Male', asigna 'O'
 			END
 			AND Nombre = 'ClienteImportado'
-		)
+		),
+		0
 	FROM #TempVenta AS Temp
 	WHERE NOT EXISTS (
 		SELECT 1
@@ -500,19 +501,70 @@ BEGIN
 		WHERE Temp.[ID_Factura] = F.FacturaID
 	)
 
-	
-	INSERT INTO Venta.DetalleFactura(Cantidad,FacturaID,ProductoID)
+	INSERT INTO Venta.DetalleVenta(Cantidad,VentaID,ProductoID,Precio,Subtotal)
 	SELECT
 		([Cantidad]),
-		(SELECT FacturaNum FROM Venta.Factura WHERE FacturaID = ([ID_Factura])),
-		(SELECT TOP 1 ProductoID FROM Producto.Producto WHERE Nombre = ([Producto]))
+		(SELECT VentaID FROM Venta.Venta WHERE VentaNum = ([ID_Factura])),
+		(SELECT TOP 1 ProductoID FROM Producto.Producto WHERE Nombre = ([Producto])),
+		([Precio_Unitario]),
+		CASE
+			WHEN (SELECT Moneda FROM Producto.Producto WHERE Nombre = ([Producto])) = 'USD' THEN
+				([Cantidad] * [Precio_Unitario]) * (SELECT Venta FROM TipoDeCambio WHERE Moneda = 'USD')
+			ELSE
+				([Cantidad] * [Precio_Unitario])
+		END
 	FROM #TempVenta AS Temp
 	WHERE NOT EXISTS (
 		SELECT 1
-		FROM Venta.DetalleFactura AS DF
-		JOIN Venta.Factura F ON DF.FacturaID = F.FacturaNum
+		FROM Venta.DetalleVenta AS DF
+		JOIN Venta.Venta F ON DF.VentaID = F.VentaID
 		JOIN Producto.Producto P ON DF.ProductoID = P.ProductoID
-		WHERE Temp.[ID_Factura] = F.FacturaID AND Temp.[Producto] = P.Nombre
+		WHERE Temp.[ID_Factura] = F.VentaNum AND Temp.[Producto] = P.Nombre
+	)
+
+	-- Actualizar el Total en la tabla Venta
+	UPDATE V
+	SET V.Total = ISNULL((
+		SELECT SUM(DV.Subtotal)
+		FROM Venta.DetalleVenta DV
+		WHERE DV.VentaID = V.VentaID
+	), 0)
+	FROM Venta.Venta V
+	WHERE EXISTS (
+		SELECT 1
+		FROM Venta.DetalleVenta DV
+		WHERE DV.VentaID = V.VentaID
+	);
+
+	-- Ahora también puedes actualizar el campo TotalConIva si es necesario
+	UPDATE V
+	SET V.TotalConIva = V.Total * 1.21 -- Ejemplo con IVA del 21%
+	FROM Venta.Venta V
+	WHERE V.Total > 0; -- Solo actualiza ventas con un total calculado
+
+	-- Insertar los datos en la tabla Venta.Factura
+	INSERT INTO Venta.Factura (TipoDeFactura, Fecha, Total, TotalConIva, VentaID)
+	SELECT
+		[TipoDeFactura],  -- Tipo de factura (A, B, C)
+		[Fecha],            -- Fecha de la venta
+		ISNULL((
+			SELECT SUM(DV.Subtotal)
+			FROM Venta.DetalleVenta DV
+			WHERE DV.VentaID = V.VentaID
+		), 0) AS Total,  -- Sumar los subtotales para calcular el total
+		ISNULL((
+			SELECT SUM(DV.Subtotal)
+			FROM Venta.DetalleVenta DV
+			WHERE DV.VentaID = V.VentaID
+		), 0) * 1.21 AS TotalConIva,  -- Calcular TotalConIva (suponiendo IVA del 16%)
+		V.VentaID  -- Asociar la venta
+	FROM Venta.Venta V JOIN #TempVenta Temp ON v.VentaNum = Temp.ID_Factura
+	WHERE V.VentaNum = Temp.ID_Factura
+	AND NOT EXISTS (
+    -- Verificar si ya existe una factura con el mismo VentaNum (ID_Factura)
+    SELECT 1
+    FROM Venta.Factura F
+    WHERE F.VentaID = V.VentaID  -- Usar VentaID para evitar duplicados en Factura
 	)
 
 	DROP TABLE #TempVenta

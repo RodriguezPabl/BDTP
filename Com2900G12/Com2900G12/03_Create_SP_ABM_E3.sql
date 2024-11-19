@@ -784,86 +784,10 @@ BEGIN
 END;
 GO
 
--- SP's de Factura
-/*
-CREATE OR ALTER PROCEDURE Venta.InsertarFactura
-    @FacturaID INT = NULL,
-    @TipoDeFactura CHAR(1) = NULL,
-	@Identificador VARCHAR(50) = NULL,
-    @EmpleadoID INT = NULL,
-    @MedioDePagoID INT = NULL,
-	@ClienteID INT = NULL
-AS
-BEGIN
-    DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
-
-    -- Verificar si alguno de los parámetros es NULL
-    IF @FacturaID IS NULL
-        SET @Errores = @Errores + 'El parámetro FacturaID no puede ser NULL. ';
-    
-    IF @TipoDeFactura IS NULL
-        SET @Errores = @Errores + 'El parámetro TipoDeFactura no puede ser NULL. ';
-
-	IF @Identificador IS NULL
-        SET @Errores = @Errores + 'El parámetro identificador no puede ser NULL. ';
-    
-    IF @EmpleadoID IS NULL
-        SET @Errores = @Errores + 'El parámetro EmpleadoID no puede ser NULL. ';
-    
-    IF @MedioDePagoID IS NULL
-        SET @Errores = @Errores + 'El parámetro MedioDePagoID no puede ser NULL. ';
-
-    IF @ClienteID IS NULL
-        SET @Errores = @Errores + 'El parámetro ClienteID no puede ser NULL. ';
-    
-    -- Si hay errores, usar RAISEERROR para devolverlos
-    IF @Errores <> ''
-    BEGIN
-        RAISERROR(@Errores, 16, 1);
-        RETURN;
-    END
-
-    -- Insertar los datos en la tabla
-    INSERT INTO Venta.Factura (FacturaID, TipoDeFactura,Identificador, EmpleadoID, MedioDePagoID, ClienteID)
-    VALUES (@FacturaID, @TipoDeFactura, @Identificador, @EmpleadoID, @MedioDePagoID, @ClienteID);
-END;
-GO -- cabmiar esto
-
-CREATE OR ALTER PROCEDURE Venta.ModificarFactura
-    @FacturaNum INT,
-    @TipoDeFactura CHAR(1) = NULL,
-	@Identificador VARCHAR(50) = NULL,
-    @EmpleadoID INT = NULL,
-    @MedioDePagoID INT = NULL,
-	@ClienteID INT = NULL
-AS
-BEGIN
-    DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
-
-    -- Verificar si la Factura existe
-    IF NOT EXISTS (SELECT 1 FROM Venta.Factura WHERE FacturaNum = @FacturaNum)
-    BEGIN
-        RAISERROR('Factura no encontrada.', 16, 1);  -- Lanzamos los errores concatenados
-        RETURN;
-    END
-
-    -- Realizar la actualización
-    UPDATE Venta.Factura
-    SET 
-        TipoDeFactura = COALESCE(@TipoDeFactura, TipoDeFactura),
-		Identificador = COALESCE(@Identificador, Identificador),
-        EmpleadoID = COALESCE(@EmpleadoID, EmpleadoID),
-        MedioDePagoID = COALESCE(@MedioDePagoID, MedioDePagoID),
-		ClienteID = COALESCE(@ClienteID, ClienteID)
-    WHERE FacturaNum = @FacturaNum;
-END;
-GO -- cambiar esto
-*/
-
 -- SP's de DetalleVenta
 CREATE OR ALTER PROCEDURE Venta.InsertarDetalleVenta
-    @Cantidad INT = NULL,
     @VentaID INT = NULL,
+    @Cantidad INT = NULL,
     @ProductoID INT = NULL
 AS
 BEGIN
@@ -896,6 +820,9 @@ BEGIN
 
 	DECLARE @Precio DECIMAL(7,2)
 	SET @Precio = (SELECT PrecioUnitario FROM Producto.Producto WHERE ProductoID = @ProductoID)
+	IF (SELECT Moneda FROM Producto.Producto WHERE ProductoID = @ProductoID) = 'USD'
+		SET @Precio = @Precio * (SELECT Venta FROM TipoDeCambio WHERE Moneda = 'USD')
+
 	DECLARE @Subtotal DECIMAL(9,2)
 	SET @Subtotal = @Cantidad * @Precio
 
@@ -943,7 +870,11 @@ BEGIN
 	IF (@Cantidad IS NOT NULL OR @ProductoID IS NOT NULL)
 	BEGIN
 		IF @ProductoID IS NOT NULL
+		BEGIN
 			SET @Precio = (SELECT PrecioUnitario FROM Producto.Producto WHERE ProductoID = @ProductoID)
+			IF (SELECT Moneda FROM Producto.Producto WHERE ProductoID = @ProductoID) = 'USD'
+				SET @Precio = @Precio * (SELECT Venta FROM TipoDeCambio WHERE Moneda = 'USD')
+		END
 		ELSE
 			SET @Precio = (SELECT Precio FROM Venta.DetalleVenta WHERE NumeroDeItem = @NumeroDeItem)
 
@@ -994,14 +925,58 @@ BEGIN
 END;
 GO 
 
-/*
-EXEC Venta.CrearVenta
-EXEC Venta.InsertarDetalleVenta 1, 3, 2
-EXEC Venta.InsertarDetalleVenta 2, 3, 3
-EXEC Venta.ModificarDetalleVenta @NumeroDeItem=5, @ProductoID = 1
-EXEC Venta.ModificarVenta @VentaID=3, @TipoDeFactura='C'
-SELECT * FROM Producto.Producto
-SELECT * FROM Venta.DetalleVenta
-SELECT * FROM Venta.Venta
-SELECT * FROM Venta.Factura
-*/
+CREATE OR ALTER PROCEDURE Venta.InsertarTipoDeCambio
+	@Moneda CHAR(3) = NULL,
+	@Compra DECIMAL(7,2) = NULL,
+	@Venta DECIMAL(7,2) = NULL
+AS
+BEGIN
+	DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
+
+	--verifico si algunos de los parametros es nulo
+	IF @Moneda IS NULL
+        SET @Errores = @Errores + 'El parámetro Moneda no puede ser NULL. ';
+    
+    IF @Compra IS NULL
+        SET @Errores = @Errores + 'El parámetro Compra no puede ser NULL. ';
+    
+    IF @Venta IS NULL
+        SET @Errores = @Errores + 'El parámetro Venta no puede ser NULL. ';
+
+	--verifico que no haya una moneda repetida
+	IF EXISTS (SELECT 1 FROM Venta.TipoDeCambio WHERE Moneda = @Moneda)
+    BEGIN
+        SET @Errores = @Errores + 'Ya existe un TipoDeCambio con la misma Moneda. ';
+    END
+
+	IF @Errores <> ''
+	BEGIN
+		RAISERROR(@Errores,16,1)
+		RETURN
+	END
+
+	INSERT INTO Venta.TipoDeCambio (Moneda,Compra,Venta) VALUES (@Moneda,@Compra,@Venta)
+END
+GO
+
+CREATE OR ALTER PROCEDURE Venta.ModificarTipoDeCambio
+	@TipoDeCambioID INT,
+	@Compra DECIMAL(7,2) = NULL,
+	@Venta DECIMAL(7,2) = NULL
+AS
+BEGIN
+	-- Verificar si el ID existe
+    IF NOT EXISTS (SELECT 1 FROM Venta.TipoDeCambio WHERE TipoDeCambioID = @TipoDeCambioID)
+    BEGIN
+        RAISERROR('Tipo de cambio no encontrado', 16, 1);
+        RETURN;
+    END
+
+	UPDATE Venta.TipoDeCambio
+    SET 
+        Compra = COALESCE(@Compra, Compra),
+        Venta = COALESCE(@Venta, Venta),
+		FechaDeEmision = GETDATE()
+    WHERE TipoDeCambioID = @TipoDeCambioID;
+END
+GO

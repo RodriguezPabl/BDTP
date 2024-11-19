@@ -62,8 +62,8 @@ EXEC Producto.ImportarProductosImportados 'F:\TP_integrador_Archivos\Productos\P
 SELECT * FROM Producto.Producto
 
 --Cliente y Factura
-EXEC Venta.ImportarClienteFactura 'F:\TP_integrador_Archivos\Ventas_registradas.csv'
+EXEC Venta.ImportarImportarVenta	'F:\TP_integrador_Archivos\Ventas_registradas.csv'
 SELECT * FROM Venta.Cliente
+SELECT * FROM Venta.DetalleVenta
+SELECT * FROM Venta.Venta
 SELECT * FROM Venta.Factura
-SELECT * FROM Venta.DetalleFactura
-

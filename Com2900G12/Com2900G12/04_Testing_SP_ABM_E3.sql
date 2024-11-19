@@ -98,17 +98,6 @@ EXEC Venta.ModificarCliente @ClienteID=1, @Apellido='Ruiz'
 --Borrado exitoso
 EXEC Venta.BorrarCliente @ClienteID=2
 
-/*
--- ##### SP's de Factura #####
-SELECT * FROM Venta.Factura
---Insercion exitosa
-EXEC Venta.CompletarVenta @VentaID=3, @VentaNum=1,@TipoDeFactura='A',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=1,@Identificador=33
-EXEC Venta.InsertarFactura @FacturaID=2,@TipoDeFactura='B',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=2,@Identificador=34
---Actualizacion exitosa
-EXEC Venta.ModificarFactura @FacturaNum=2,@TipoDeFactura='C'
---No se puede borrar factura
-*/
-
 -- ##### SP's de CategoriaProducto #####
 SELECT * FROM Producto.CategoriaProducto
 --Insercion exitosa
@@ -132,14 +121,28 @@ EXEC Producto.ModificarProducto @ProductoID=4,@PrecioUnitario=17
 --Borrado exitoso
 EXEC Producto.BorrarProducto @ProductoID=4
 
-/*
--- ##### SP's de DetalleFactura #####
-SELECT * FROM Venta.DetalleFactura
---Insercion correcta
-EXEC Venta.InsertarDetalleFactura @Cantidad=1, @FacturaID=1, @ProductoID=1
-EXEC Venta.InsertarDetalleFactura @Cantidad=1, @FacturaID=1, @ProductoID=2
-EXEC Venta.InsertarDetalleFactura @Cantidad=2, @FacturaID=1, @ProductoID=3
---Actualizacion correcta
-EXEC Venta.ModificarDetalleFactura @NumeroDeItem=2, @Cantidad=2
---No se puede borrar detalle de factura
-*/
+-- ##### SP's de TipoDeCambio #####
+SELECT * FROM Venta.TipoDeCambio
+--insersion exitosa
+EXEC Venta.InsertarTipoDeCambio 'USD',972.85,1031.15
+--modificacion exitosa
+EXEC Venta.ModificarTipoDeCambio @TipoDeCambioID=1,@Compra=972.85
+
+-- #### SP's de Venta y DetalleVenta #####
+SELECT * FROM Producto.Producto
+SELECT * FROM Venta.DetalleVenta
+SELECT * FROM Venta.Venta
+SELECT * FROM Venta.Factura
+--inicializo la venta
+EXEC Venta.CrearVenta
+--inserto detalles de venta que aumentan el total de la venta
+EXEC Venta.InsertarDetalleVenta 1, 2, 2
+EXEC Venta.InsertarDetalleVenta 1, 2, 3
+--completo la venta con los demas datos y cargo la factura
+EXEC Venta.CompletarVenta @VentaID=1, @VentaNum='123-77-456', @TipoDeFactura='A',@EmpleadoID=1,@MedioDePagoID=1,@ClienteID=1,@Identificador=1234567789
+--modifico detalles de venta
+EXEC Venta.ModificarDetalleVenta @NumeroDeItem=1, @ProductoID = 1
+EXEC Venta.ModificarDetalleVenta @NumeroDeItem=2, @Cantidad = 10
+--modifico venta
+EXEC Venta.ModificarVenta @VentaID=1, @TipoDeFactura='C'
+
