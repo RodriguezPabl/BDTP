@@ -105,10 +105,175 @@ GO
 CREATE OR ALTER PROCEDURE Venta.ReporteProductosVendidos
 	@FechaInicio DATE,
 	@FechaFin DATE
+AS
 BEGIN
-	
+	SELECT 
+        p.Nombre AS Producto,         -- Nombre del producto (se asume que hay una columna Nombre en la tabla Producto)
+        SUM(dv.Cantidad) AS CantidadVendida
+    FROM Venta.DetalleVenta dv
+    INNER JOIN Venta.Venta v ON dv.VentaID = v.VentaID
+    INNER JOIN Producto.Producto p ON dv.ProductoID = p.ProductoID
+    WHERE v.Fecha BETWEEN @FechaInicio AND @FechaFin  -- Filtra por el rango de fechas
+    GROUP BY p.Nombre
+    ORDER BY CantidadVendida DESC   -- Ordena de mayor a menor cantidad
+	FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE
 END
 GO
+
+CREATE OR ALTER PROCEDURE Venta.ReporteProductosVendidosPorSucursal
+	@FechaInicio DATE,
+	@FechaFin DATE
+AS
+BEGIN
+	SELECT 
+        p.Nombre AS Producto,         -- Nombre del producto (se asume que hay una columna Nombre en la tabla Producto)
+		CASE 
+			WHEN s.ReemplazarPor IS NOT NULL THEN s.ReemplazarPor
+			ELSE s.Ciudad
+		END AS Sucursal,
+        SUM(dv.Cantidad) AS CantidadVendida
+    FROM Venta.DetalleVenta dv
+    INNER JOIN Venta.Venta v ON dv.VentaID = v.VentaID
+    INNER JOIN Producto.Producto p ON dv.ProductoID = p.ProductoID
+	INNER JOIN Sucursal.Empleado e ON e.EmpleadoID = v.EmpleadoID
+	INNER JOIN Sucursal.Sucursal s ON s.SucursalID = e.SucursalID
+    WHERE v.Fecha BETWEEN @FechaInicio AND @FechaFin  -- Filtra por el rango de fechas
+    GROUP BY 	
+		CASE 
+			WHEN s.ReemplazarPor IS NOT NULL THEN s.ReemplazarPor
+			ELSE s.Ciudad
+		END,
+		p.Nombre
+    ORDER BY 
+		CASE 
+			WHEN s.ReemplazarPor IS NOT NULL THEN s.ReemplazarPor
+			ELSE s.Ciudad
+		END,
+		CantidadVendida DESC   -- Ordena de mayor a menor cantidad
+	FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE
+END
+GO
+
+CREATE OR ALTER PROCEDURE Venta.ReporteProductosMasVendidosPorSemana
+    @Año INT,  -- Año especificado
+    @Mes INT   -- Mes especificado
+AS
+BEGIN
+    -- Construir la fecha de inicio y fin del mes
+    DECLARE @FechaInicio DATE = DATEFROMPARTS(@Año, @Mes, 1); -- Primer día del mes
+    DECLARE @FechaFin DATE = DATEADD(DAY, -1, DATEADD(MONTH, 1, @FechaInicio)); -- Último día del mes
+
+    ;WITH ProductosPorSemana AS (
+        SELECT 
+            p.Nombre AS Producto,                           -- Nombre del producto
+            DATEPART(WK, v.Fecha) AS SemanaDelAño,         -- Semana del año
+            SUM(dv.Cantidad) AS CantidadVendida            -- Cantidad total vendida
+        FROM Venta.DetalleVenta dv
+        INNER JOIN Venta.Venta v ON dv.VentaID = v.VentaID
+        INNER JOIN Producto.Producto p ON dv.ProductoID = p.ProductoID
+        WHERE 
+            YEAR(v.Fecha) = @Año                            -- Filtra por el año
+            AND MONTH(v.Fecha) = @Mes                       -- Filtra por el mes
+        GROUP BY p.Nombre, DATEPART(WK, v.Fecha)            -- Agrupa por producto y semana del año
+    )
+    -- Seleccionamos los 5 productos más vendidos de cada semana dentro del mes
+    SELECT 
+        SemanaDelAño,               -- Semana del año
+        Producto,                   -- Nombre del producto
+        CantidadVendida             -- Cantidad vendida
+    FROM (
+        SELECT 
+            SemanaDelAño,
+            Producto,
+            CantidadVendida,
+            ROW_NUMBER() OVER (PARTITION BY SemanaDelAño ORDER BY CantidadVendida DESC) AS RowNum  -- Genera un número de fila por semana
+        FROM 
+            ProductosPorSemana
+        WHERE SemanaDelAño BETWEEN DATEPART(WK, @FechaInicio) AND DATEPART(WK, @FechaFin)  -- Filtra las semanas dentro del rango de fechas del mes
+    ) AS ProductosPorSemanaOrdenados
+    WHERE RowNum <= 5  -- Limita a los 5 productos más vendidos de cada semana
+    ORDER BY 
+        SemanaDelAño,            -- Primero ordenamos por semana del año
+        RowNum                  -- Luego ordenamos por la cantidad vendida (de mayor a menor)
+    FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE  -- Devuelve el resultado en formato XML
+END
+GO
+
+CREATE OR ALTER PROCEDURE Venta.ReporteProductosMenosVendidosPorSemana
+    @Año INT,  -- Año especificado
+    @Mes INT   -- Mes especificado
+AS
+BEGIN
+    -- Construir la fecha de inicio y fin del mes
+    DECLARE @FechaInicio DATE = DATEFROMPARTS(@Año, @Mes, 1); -- Primer día del mes
+    DECLARE @FechaFin DATE = DATEADD(DAY, -1, DATEADD(MONTH, 1, @FechaInicio)); -- Último día del mes
+
+    ;WITH ProductosPorSemana AS (
+        SELECT 
+            p.Nombre AS Producto,                           -- Nombre del producto
+            DATEPART(WK, v.Fecha) AS SemanaDelAño,         -- Semana del año
+            SUM(dv.Cantidad) AS CantidadVendida            -- Cantidad total vendida
+        FROM Venta.DetalleVenta dv
+        INNER JOIN Venta.Venta v ON dv.VentaID = v.VentaID
+        INNER JOIN Producto.Producto p ON dv.ProductoID = p.ProductoID
+        WHERE 
+            YEAR(v.Fecha) = @Año                            -- Filtra por el año
+            AND MONTH(v.Fecha) = @Mes                       -- Filtra por el mes
+        GROUP BY p.Nombre, DATEPART(WK, v.Fecha)            -- Agrupa por producto y semana del año
+    )
+    -- Seleccionamos los 5 productos menos vendidos de cada semana dentro del mes
+    SELECT 
+        SemanaDelAño,               -- Semana del año
+        Producto,                   -- Nombre del producto
+        CantidadVendida             -- Cantidad vendida
+    FROM (
+        SELECT 
+            SemanaDelAño,
+            Producto,
+            CantidadVendida,
+            ROW_NUMBER() OVER (PARTITION BY SemanaDelAño ORDER BY CantidadVendida ASC) AS RowNum  -- Ordenamos de menor a mayor cantidad vendida
+        FROM 
+            ProductosPorSemana
+        WHERE SemanaDelAño BETWEEN DATEPART(WK, @FechaInicio) AND DATEPART(WK, @FechaFin)  -- Filtra las semanas dentro del rango de fechas del mes
+    ) AS ProductosPorSemanaOrdenados
+    WHERE RowNum <= 5  -- Limita a los 5 productos menos vendidos de cada semana
+    ORDER BY 
+        SemanaDelAño,            -- Primero ordenamos por semana del año
+        RowNum                  -- Luego ordenamos por la cantidad vendida (de menor a mayor)
+    FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE  -- Devuelve el resultado en formato XML
+END
+GO
+
+/*
+CREATE OR ALTER PROCEDURE Venta.ReporteProductosMenosVendidosEnElMes
+    @Año INT,  -- Año especificado
+    @Mes INT   -- Mes especificado
+AS
+BEGIN
+    ;WITH ProductosPorMes AS (
+        SELECT 
+            p.Nombre AS Producto,                          -- Nombre del producto
+            SUM(dv.Cantidad) AS CantidadVendida            -- Cantidad total vendida en el mes
+        FROM Venta.DetalleVenta dv
+        INNER JOIN Venta.Venta v ON dv.VentaID = v.VentaID
+        INNER JOIN Producto.Producto p ON dv.ProductoID = p.ProductoID
+        WHERE 
+            YEAR(v.Fecha) = @Año                            -- Filtra por el año
+            AND MONTH(v.Fecha) = @Mes                       -- Filtra por el mes
+        GROUP BY p.Nombre                                  -- Agrupa solo por el nombre del producto
+    )
+    -- Seleccionamos los 5 productos menos vendidos en el mes
+    SELECT TOP 5
+        Producto,                   -- Nombre del producto
+        CantidadVendida             -- Cantidad vendida en el mes
+    FROM 
+        ProductosPorMes
+    ORDER BY 
+        CantidadVendida ASC         -- Ordena por la cantidad vendida (de menor a mayor)
+    FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE  -- Devuelve el resultado en formato XML
+END
+GO
+*/
 
 --Reporte general
 EXEC Venta.ReporteGeneralOrdenadoPorFecha
@@ -119,3 +284,19 @@ EXEC Venta.ReporteMensualPorDiaXML 3,2019
 --Reporte Mensual por turno
 EXEC Venta.ReporteTrimestralPorMesXML 2024
 
+--Reporte de productos vendidos
+EXEC Venta.ReporteProductosVendidos '2019-01-01', '2019-04-01'
+
+--Reporte de productos vendidos por sucursal
+EXEC Venta.ReporteProductosVendidosPorSucursal '2019-01-01', '2019-04-01'
+
+--Reporte de los 5 productos mas vendidos en un mes, por semana
+EXEC Venta.ReporteProductosMasVendidosPorSemana 2019,3
+
+--Reporte de los 5 productos menos vendidos en un mes, por semana
+EXEC Venta.ReporteProductosMenosVendidosPorSemana 2019, 2
+
+/*
+--Reporte de los 5 productos menos vendidos en el mes
+EXEC Venta.ReporteProductosMenosVendidosEnElMes 2019, 1
+*/
