@@ -5,16 +5,16 @@ GO
 EXEC Venta.ReporteDeVentas
 
 --Reporte Mensual por dia de la semana
-EXEC Venta.ReporteMensualPorDiaXML 3,2019
+EXEC Venta.ReporteMensualPorDiaDeLaSemana 3,2019
 
 --Reporte Mensual por turno
-EXEC Venta.ReporteTrimestralPorMesXML 2019
+EXEC Venta.ReporteTrimestralPorTurnosPorMes 'TM', 1, 2019
 
 --Reporte de productos vendidos
-EXEC Venta.ReporteProductosVendidos '2019-01-01', '2019-04-01'
+EXEC Venta.ReporteProductosVendidos '2019-01-01', '2024-12-01'
 
 --Reporte de productos vendidos por sucursal
-EXEC Venta.ReporteProductosVendidosPorSucursal '2019-01-01', '2019-04-01'
+EXEC Venta.ReporteProductosVendidosPorSucursal '2019-01-01', '2024-12-01', 3
 
 --Reporte de los 5 productos mas vendidos en un mes, por semana
 EXEC Venta.ReporteProductosMasVendidosPorSemana 2019,3

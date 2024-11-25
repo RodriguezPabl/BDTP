@@ -72,7 +72,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE Venta.ReporteMensualPorDiaXML
+CREATE OR ALTER PROCEDURE Venta.ReporteMensualPorDiaDeLaSemana
     @Mes INT,           -- Mes de la factura (1-12)
     @Anio INT           -- Año de la factura (por ejemplo 2024)
 AS
@@ -88,10 +88,14 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE Venta.ReporteTrimestralPorMesXML
+CREATE OR ALTER PROCEDURE Venta.ReporteTrimestralPorTurnosPorMes
+	@Turno VARCHAR(25),
+	@Trimestre INT,
 	@Anio INT
 AS
 BEGIN
+	-- Filtrar por Trimestre
+	-- El trimestre define un rango de meses. Utilizamos la función CASE para determinar el rango de meses del trimestre especificado.
 	SELECT
 		DATENAME(month, f.Fecha) AS Mes,
 		e.Turno,
@@ -100,8 +104,26 @@ BEGIN
 	INNER JOIN Venta.Venta v ON v.VentaID = f.VentaID
 	INNER JOIN Sucursal.Empleado e ON e.EmpleadoID = v.EmpleadoID
 	WHERE YEAR(f.Fecha) = @Anio
-	GROUP BY DATENAME(month, f.Fecha),MONTH(f.Fecha), e.Turno
+	-- Filtrar por el trimestre utilizando un CASE para definir los meses correspondientes al trimestre
+	AND MONTH(f.Fecha) BETWEEN 
+		CASE 
+			WHEN @Trimestre = 1 THEN 1
+			WHEN @Trimestre = 2 THEN 4
+			WHEN @Trimestre = 3 THEN 7
+			WHEN @Trimestre = 4 THEN 10
+		END
+		AND 
+		CASE 
+			WHEN @Trimestre = 1 THEN 3
+			WHEN @Trimestre = 2 THEN 6
+			WHEN @Trimestre = 3 THEN 9
+			WHEN @Trimestre = 4 THEN 12
+		END
+	-- Filtrar por Turno (ahora obligatorio)
+	AND e.Turno = @Turno
+	GROUP BY DATENAME(month, f.Fecha), MONTH(f.Fecha), e.Turno
 	ORDER BY MONTH(f.Fecha)
+	-- Regresar el resultado como XML
 	FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE
 END
 GO
@@ -126,7 +148,8 @@ GO
 
 CREATE OR ALTER PROCEDURE Venta.ReporteProductosVendidosPorSucursal
 	@FechaInicio DATE,
-	@FechaFin DATE
+	@FechaFin DATE,
+	@SucursalID INT 
 AS
 BEGIN
 	SELECT 
@@ -141,7 +164,7 @@ BEGIN
     INNER JOIN Producto.Producto p ON dv.ProductoID = p.ProductoID
 	INNER JOIN Sucursal.Empleado e ON e.EmpleadoID = v.EmpleadoID
 	INNER JOIN Sucursal.Sucursal s ON s.SucursalID = e.SucursalID
-    WHERE v.Fecha BETWEEN @FechaInicio AND @FechaFin  -- Filtra por el rango de fechas
+    WHERE v.Fecha BETWEEN @FechaInicio AND @FechaFin AND s.SucursalID = @SucursalID  -- Filtra por el rango de fechas
     GROUP BY 	
 		CASE 
 			WHEN s.ReemplazarPor IS NOT NULL THEN s.ReemplazarPor
