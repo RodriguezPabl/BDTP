@@ -10,22 +10,22 @@
 */
 
 /* Entrega 3
-Luego de decidirse por un motor de base de datos relacional, llegó el momento de generar la
+Luego de decidirse por un motor de base de datos relacional, llegï¿½ el momento de generar la
 base de datos.
-Deberá instalar el DMBS y documentar el proceso. No incluya capturas de pantalla. Detalle
-las configuraciones aplicadas (ubicación de archivos, memoria asignada, seguridad, puertos,
-etc.) en un documento como el que le entregaría al DBA.
-Cree la base de datos, entidades y relaciones. Incluya restricciones y claves. Deberá entregar
-un archivo .sql con el script completo de creación (debe funcionar si se lo ejecuta “tal cual” es
-entregado). Incluya comentarios para indicar qué hace cada módulo de código.
-Genere store procedures para manejar la inserción, modificado, borrado (si corresponde,
-también debe decidir si determinadas entidades solo admitirán borrado lógico) de cada tabla.
-Los nombres de los store procedures NO deben comenzar con “SP”.
-Genere esquemas para organizar de forma lógica los componentes del sistema y aplique esto
-en la creación de objetos. NO use el esquema “dbo”.
+Deberï¿½ instalar el DMBS y documentar el proceso. No incluya capturas de pantalla. Detalle
+las configuraciones aplicadas (ubicaciï¿½n de archivos, memoria asignada, seguridad, puertos,
+etc.) en un documento como el que le entregarï¿½a al DBA.
+Cree la base de datos, entidades y relaciones. Incluya restricciones y claves. Deberï¿½ entregar
+un archivo .sql con el script completo de creaciï¿½n (debe funcionar si se lo ejecuta ï¿½tal cualï¿½ es
+entregado). Incluya comentarios para indicar quï¿½ hace cada mï¿½dulo de cï¿½digo.
+Genere store procedures para manejar la inserciï¿½n, modificado, borrado (si corresponde,
+tambiï¿½n debe decidir si determinadas entidades solo admitirï¿½n borrado lï¿½gico) de cada tabla.
+Los nombres de los store procedures NO deben comenzar con ï¿½SPï¿½.
+Genere esquemas para organizar de forma lï¿½gica los componentes del sistema y aplique esto
+en la creaciï¿½n de objetos. NO use el esquema ï¿½dboï¿½.
 El archivo .sql con el script debe incluir comentarios donde consten este enunciado, la fecha
-de entrega, número de grupo, nombre de la materia, nombres y DNI de los alumnos.
-Entregar todo en un zip cuyo nombre sea Grupo_XX.zip mediante la sección de prácticas de
+de entrega, nï¿½mero de grupo, nombre de la materia, nombres y DNI de los alumnos.
+Entregar todo en un zip cuyo nombre sea Grupo_XX.zip mediante la secciï¿½n de prï¿½cticas de
 MIEL. Solo uno de los miembros del grupo debe hacer la entrega. */
 
 USE Com2900G12
@@ -222,7 +222,7 @@ BEGIN
 END
 GO
 
-/* PARA LA ENTREGA 5
+-- PARA LA ENTREGA 5
 -- Tabla de nota de credito
 IF OBJECT_ID('Venta.NotaDeCredito', 'U') IS NOT NULL
     DROP TABLE Venta.NotaDeCredito
@@ -232,6 +232,7 @@ BEGIN
 	CREATE TABLE Venta.NotaDeCredito(
 		NotaDeCreditoID INT IDENTITY(1,1),
 		FechaDeEmision DATETIME DEFAULT GETDATE(),
+		Monto DECIMAL(9,2),
 		Motivo VARCHAR(50),
 		FacturaID INT NOT NULL,
 		DetalleVentaID INT NOT NULL,
@@ -240,7 +241,7 @@ BEGIN
 	)
 END
 GO
-*/
+
 
 -- Tabla de tipo de cambio
 IF OBJECT_ID('Venta.NotaDeCambio', 'U') IS NOT NULL
