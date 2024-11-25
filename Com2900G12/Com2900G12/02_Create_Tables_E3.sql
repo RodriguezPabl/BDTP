@@ -235,9 +235,9 @@ BEGIN
 		Monto DECIMAL(9,2),
 		Motivo VARCHAR(50),
 		FacturaID INT NOT NULL,
-		DetalleVentaID INT NOT NULL,
+		DetalleVentaID INT,
 		CONSTRAINT FK_FacturaNdC FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaID),
-		CONSTRAINT FK_DetalleVentaNdC FOREIGN KEY (DetalleVentaID) REFERENCES Producto.Producto(NumeroDeItem)
+		CONSTRAINT FK_DetalleVentaNdC FOREIGN KEY (DetalleVentaID) REFERENCES Venta.DetalleVenta(NumeroDeItem)
 	)
 END
 GO

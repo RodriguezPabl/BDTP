@@ -79,17 +79,47 @@
           <AssociatedConnUserName />
           <FullPath>07_Testing_SP_Importacion_E4.sql</FullPath>
         </FileNode>
-        <FileNode Name="XX_Create_SP_Reportes.sql">
+        <FileNode Name="08_Roles_E5.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>XX_Create_SP_Reportes.sql</FullPath>
+          <FullPath>08_Roles_E5.sql</FullPath>
         </FileNode>
-        <FileNode Name="XX_Testing_SP_Reportes.sql">
+        <FileNode Name="09_Create_SP_Encriptacion_E5.sql">
           <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
           <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
           <AssociatedConnUserName />
-          <FullPath>XX_Testing_SP_Reportes.sql</FullPath>
+          <FullPath>09_Create_SP_Encriptacion_E5.sql</FullPath>
+        </FileNode>
+        <FileNode Name="10_Testing_SP_Encriptacion_E5.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>10_Testing_SP_Encriptacion_E5.sql</FullPath>
+        </FileNode>
+        <FileNode Name="11_Create_Nota_Credito_E5.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>11_Create_Nota_Credito_E5.sql</FullPath>
+        </FileNode>
+        <FileNode Name="12_Testing_Nota_Credito_E5.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>12_Testing_Nota_Credito_E5.sql</FullPath>
+        </FileNode>
+        <FileNode Name="13_Create_SP_Reportes.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>13_Create_SP_Reportes.sql</FullPath>
+        </FileNode>
+        <FileNode Name="14_Testing_SP_Reportes.sql">
+          <AssociatedConnectionMoniker>8c91a03d-f9b4-46c0-a305-b5dcc79ff907:PABLO\SQLEXPRESS:True</AssociatedConnectionMoniker>
+          <AssociatedConnSrvName>PABLO\SQLEXPRESS</AssociatedConnSrvName>
+          <AssociatedConnUserName />
+          <FullPath>14_Testing_SP_Reportes.sql</FullPath>
         </FileNode>
       </Items>
     </LogicalFolder>
