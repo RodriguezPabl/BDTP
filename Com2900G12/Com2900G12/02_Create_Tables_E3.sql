@@ -234,9 +234,9 @@ BEGIN
 		FechaDeEmision DATETIME DEFAULT GETDATE(),
 		Motivo VARCHAR(50),
 		FacturaID INT NOT NULL,
-		ProductoID INT NOT NULL,
+		DetalleVentaID INT NOT NULL,
 		CONSTRAINT FK_FacturaNdC FOREIGN KEY (FacturaID) REFERENCES Venta.Factura(FacturaID),
-		CONSTRAINT FK_ProductoNdC FOREIGN KEY (ProductoID) REFERENCES Producto.Producto(ProductoID)
+		CONSTRAINT FK_DetalleVentaNdC FOREIGN KEY (DetalleVentaID) REFERENCES Producto.Producto(NumeroDeItem)
 	)
 END
 GO

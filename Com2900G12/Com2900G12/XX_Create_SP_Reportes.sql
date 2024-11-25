@@ -1,7 +1,7 @@
 USE Com2900G12
 GO
 
-CREATE OR ALTER PROCEDURE Venta.ReporteGeneralOrdenadoPorFecha
+CREATE OR ALTER PROCEDURE Venta.ReporteDeVentas
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -19,13 +19,15 @@ BEGIN
             p.NombreCat AS LineaDeProducto,
             pr.Nombre AS Producto,
             pr.PrecioUnitario,
+			pr.Moneda,
             dv.Cantidad,
             v.Fecha,
             v.Hora,
             mp.DescripcionESP AS MedioDePago,
             e.EmpleadoID,
             s.SucursalID AS Sucursal,
-			v.Total
+			v.Total,
+			v.TotalConIva
         FROM
             Venta.Venta v
             INNER JOIN Venta.Cliente c ON v.ClienteID = c.ClienteID
@@ -47,13 +49,15 @@ BEGIN
         f.LineaDeProducto,
         f.Producto,
         f.PrecioUnitario,
+		f.Moneda,
         f.Cantidad,
         f.Fecha,
         f.Hora,
         f.MedioDePago,
         f.EmpleadoID,
         f.Sucursal,
-		f.Total
+		f.Total,
+		f.TotalConIva
     INTO #Reporte
     FROM
         Facturas f
@@ -61,7 +65,7 @@ BEGIN
     -- Convertimos a formato XML
     SELECT * 
     FROM #Reporte
-    FOR XML PATH('Factura'), ROOT('ReporteFacturaMensual');
+    FOR XML PATH('Factura'), ROOT('ReporteFacturaMensual'), TYPE
     
     -- Limpiamos la tabla temporal
     DROP TABLE #Reporte;
@@ -244,6 +248,36 @@ BEGIN
 END
 GO
 
+CREATE OR ALTER PROCEDURE Venta.ReporteVentasAcumuladasPorSucursal
+    @Fecha DATE,              -- Fecha específica para el reporte
+    @SucursalID INT           -- ID de la sucursal para filtrar
+AS
+BEGIN
+    SELECT 
+        v.VentaID,                             -- ID de la venta
+        v.Fecha AS FechaVenta,                 -- Fecha de la venta
+        dv.Subtotal,                         -- Monto de la venta
+		CASE 
+			WHEN s.ReemplazarPor IS NOT NULL THEN s.ReemplazarPor
+			ELSE s.Ciudad
+		END AS Sucursal,                  -- Sucursal (considerando ciudad o reemplazo si aplica)
+        SUM(dv.Subtotal) OVER (
+            PARTITION BY s.SucursalID
+            ORDER BY v.Fecha
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS TotalAcumulado                     -- Total acumulado hasta la venta actual
+    FROM Venta.Venta v
+    INNER JOIN Venta.DetalleVenta dv ON v.VentaID = dv.VentaID
+	INNER JOIN Sucursal.Empleado e ON e.EmpleadoID = v.EmpleadoID
+    INNER JOIN Sucursal.Sucursal s ON e.SucursalID = s.SucursalID
+    WHERE 
+        v.Fecha = @Fecha                        -- Filtra por la fecha proporcionada
+        AND s.SucursalID = @SucursalID          -- Filtra por la sucursal proporcionada
+    ORDER BY v.Fecha                                -- Ordena por la fecha de la venta
+	FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE  -- Devuelve el resultado en formato XML
+END
+GO
+
 /*
 CREATE OR ALTER PROCEDURE Venta.ReporteProductosMenosVendidosEnElMes
     @Año INT,  -- Año especificado
@@ -273,30 +307,4 @@ BEGIN
     FOR XML PATH('Factura'), ROOT('Venta.Venta'), TYPE  -- Devuelve el resultado en formato XML
 END
 GO
-*/
-
---Reporte general
-EXEC Venta.ReporteGeneralOrdenadoPorFecha
-
---Reporte Mensual por dia de la semana
-EXEC Venta.ReporteMensualPorDiaXML 3,2019
-
---Reporte Mensual por turno
-EXEC Venta.ReporteTrimestralPorMesXML 2024
-
---Reporte de productos vendidos
-EXEC Venta.ReporteProductosVendidos '2019-01-01', '2019-04-01'
-
---Reporte de productos vendidos por sucursal
-EXEC Venta.ReporteProductosVendidosPorSucursal '2019-01-01', '2019-04-01'
-
---Reporte de los 5 productos mas vendidos en un mes, por semana
-EXEC Venta.ReporteProductosMasVendidosPorSemana 2019,3
-
---Reporte de los 5 productos menos vendidos en un mes, por semana
-EXEC Venta.ReporteProductosMenosVendidosPorSemana 2019, 2
-
-/*
---Reporte de los 5 productos menos vendidos en el mes
-EXEC Venta.ReporteProductosMenosVendidosEnElMes 2019, 1
 */
