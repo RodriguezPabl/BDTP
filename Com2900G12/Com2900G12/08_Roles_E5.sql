@@ -3,13 +3,13 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'usuarioEmpleado')
 BEGIN
-    CREATE LOGIN usuarioEmpleado WITH PASSWORD = 'ContraseñaSegura123';
+    CREATE LOGIN usuarioEmpleado WITH PASSWORD = 'Com2900G12';
 END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'usuarioSupervisor')
 BEGIN
-    CREATE LOGIN usuarioSupervisor WITH PASSWORD = 'ContraseñaSegura123';
+    CREATE LOGIN usuarioSupervisor WITH PASSWORD = 'Com2900G12';
 END
 GO
 
