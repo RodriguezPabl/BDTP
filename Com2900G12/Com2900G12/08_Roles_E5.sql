@@ -1,30 +1,74 @@
--- Crear roles
-
-use Com2900G12;
+USE Com2900G12;
 GO
 
-CREATE ROLE Cliente;
-CREATE ROLE Empleado;
-CREATE ROLE Supervisor;
-CREATE ROLE Administrador;
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'usuarioEmpleado')
+BEGIN
+    CREATE LOGIN usuarioEmpleado WITH PASSWORD = 'ContraseñaSegura123';
+END
+GO
 
--- Crear usuarios de ejemplo
-CREATE USER Cliente1 FOR LOGIN Cliente1Login;
-CREATE USER Empleado1 FOR LOGIN Empleado1Login;
-CREATE USER Supervisor1 FOR LOGIN Supervisor1Login;
-CREATE USER Admin1 FOR LOGIN Admin1Login;
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'usuarioSupervisor')
+BEGIN
+    CREATE LOGIN usuarioSupervisor WITH PASSWORD = 'ContraseñaSegura123';
+END
+GO
 
--- Asignar roles a usuarios
-ALTER ROLE Cliente ADD MEMBER Cliente1;
-ALTER ROLE Empleado ADD MEMBER Empleado1;
-ALTER ROLE Supervisor ADD MEMBER Supervisor1;
-ALTER ROLE Administrador ADD MEMBER Admin1;
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'Empleado' AND type = 'R')
+BEGIN
+    CREATE ROLE Empleado;
+END
+GO
 
--- Conceder permisos
-GRANT SELECT ON Ventas TO Cliente;
-GRANT INSERT, SELECT, UPDATE ON Ventas TO Empleado;
-GRANT INSERT, SELECT, UPDATE, DELETE ON Ventas TO Supervisor;
-GRANT CONTROL ON Ventas TO Administrador;
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'Supervisor' AND type = 'R')
+BEGIN
+    CREATE ROLE Supervisor;
+END
+GO
 
--- Permiso para generar notas de cr�dito a Supervisores
-GRANT INSERT, SELECT, UPDATE ON NotasCredito TO Supervisor;
+IF NOT EXISTS (SELECT 1 FROM sys.database_permissions WHERE grantee_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'Supervisor') AND major_id = OBJECT_ID('Venta.GenerarNotaDeCredito') AND permission_name = 'EXECUTE')
+BEGIN
+    GRANT EXECUTE ON Venta.GenerarNotaDeCredito TO Supervisor;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_permissions WHERE grantee_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'Supervisor') AND major_id = OBJECT_ID('Venta.NotaDeCredito') AND permission_name = 'SELECT')
+BEGIN
+    GRANT SELECT ON Venta.NotaDeCredito TO Supervisor;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_permissions WHERE grantee_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'Supervisor') AND major_id = OBJECT_ID('Venta.Factura') AND permission_name = 'SELECT')
+BEGIN
+    GRANT SELECT ON Venta.Factura TO Supervisor;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_permissions WHERE grantee_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'Empleado') AND major_id = OBJECT_ID('Sucursal.Empleado') AND permission_name = 'SELECT')
+BEGIN
+    GRANT SELECT ON Sucursal.Empleado TO Empleado;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'usuarioEmpleado')
+BEGIN
+    CREATE USER usuarioEmpleado FOR LOGIN usuarioEmpleado;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'usuarioSupervisor')
+BEGIN
+    CREATE USER usuarioSupervisor FOR LOGIN usuarioSupervisor;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_role_members WHERE role_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'Empleado') AND member_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'usuarioEmpleado'))
+BEGIN
+    EXEC sp_addrolemember 'Empleado', 'usuarioEmpleado';
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.database_role_members WHERE role_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'Supervisor') AND member_principal_id = (SELECT principal_id FROM sys.database_principals WHERE name = 'usuarioSupervisor'))
+BEGIN
+    EXEC sp_addrolemember 'Supervisor', 'usuarioSupervisor';
+END
+GO
