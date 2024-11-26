@@ -23,5 +23,5 @@ BEGIN
 END
 GO
 
-EXEC Sucursal.BackUpDiario 'F:\backup\SemanalCompleto.bak'
+EXEC Sucursal.BackUpSemanal'F:\backup\SemanalCompleto.bak'
 EXEC Sucursal.BackUpDiario 'F:\backup\DiarioDiferencial.bak'

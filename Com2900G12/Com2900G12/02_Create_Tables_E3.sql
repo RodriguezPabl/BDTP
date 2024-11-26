@@ -197,6 +197,7 @@ BEGIN
 		Fecha DATE DEFAULT GETDATE(),
 		Total DECIMAL(9,2),
 		TotalConIva DECIMAL(9,2),
+		CuitDelEmisor CHAR(13) DEFAULT '20-22222222-3', -- Segun el arca el concepto de CUIT genérico (20-22222222-3) se refiere a una situación especial en la que un contribuyente no tiene un número de CUIT válido o asignado
 		VentaID INT NOT NULL,
 		CONSTRAINT FK_VentaF FOREIGN KEY (VentaID) REFERENCES Venta.Venta(VentaID),
 	)

@@ -20,8 +20,3 @@ SELECT
     CONVERT(VARCHAR(100), DecryptByPassPhrase(@FraseClave, EmailEmpresarial, 1, CONVERT(VARBINARY, EmpleadoNum))) AS EmailEmpresarialDesencriptado
 FROM Sucursal.Empleado;
 GO
-
-/*
-USE MASTER
-GO
-DROP DATABASE Com2900G12*/
