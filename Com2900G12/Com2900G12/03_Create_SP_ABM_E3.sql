@@ -4,9 +4,7 @@
 	Integrantes:
 		-Rodriguez Pablo, 42949072
 		-Aguilera Emanuel, 41757402
-		-Tatiana Greve, 43031180
-		-Nogueira Denise, 41234014
-	Fecha: 12/11/24
+	Fecha: 26/11/24
 */
 
 /* Entrega 3
@@ -441,7 +439,8 @@ CREATE OR ALTER PROCEDURE Venta.InsetarCliente
 	@Genero CHAR(1),
 	@Nombre VARCHAR(50) = NULL,
 	@Apellido VARCHAR (50) = NULL,
-	@DNI CHAR(8) = NULL
+	@DNI CHAR(8) = NULL,
+	@Cuil CHAR(13) = NULL
 AS
 BEGIN
 	DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
@@ -460,8 +459,8 @@ BEGIN
     END
 
 	-- Insertar los datos en la tabla
-    INSERT INTO Venta.Cliente (TipoDeCliente,Genero,Nombre,Apellido,DNI)
-    VALUES (@TipoDeCliente,@Genero,@Nombre,@Apellido,@DNI);
+    INSERT INTO Venta.Cliente (TipoDeCliente,Genero,Nombre,Apellido,DNI,Cuil)
+    VALUES (@TipoDeCliente,@Genero,@Nombre,@Apellido,@DNI,@Cuil);
 END;
 GO
 
@@ -471,7 +470,8 @@ CREATE OR ALTER PROCEDURE Venta.ModificarCliente
 	@Genero CHAR(1) = NULL,
 	@Nombre VARCHAR(50) = NULL,
 	@Apellido VARCHAR (50) = NULL,
-	@DNI CHAR(8) = NULL
+	@DNI CHAR(8) = NULL,
+	@Cuil CHAR(13) = NULL
 AS
 BEGIN
 	DECLARE @Errores VARCHAR(MAX) = '';  -- Variable para almacenar los errores
@@ -494,7 +494,8 @@ BEGIN
 		Genero = COALESCE(@Genero,Genero),
 		Nombre = COALESCE(@Nombre,Nombre),
 		Apellido = COALESCE(@Apellido,Apellido),
-		DNI = COALESCE(@DNI,DNI)
+		DNI = COALESCE(@DNI,DNI),
+		Cuil = COALESCE(@Cuil,Cuil)
 	WHERE ClienteID = @ClienteID
 END
 GO

@@ -4,9 +4,7 @@
 	Integrantes:
 		-Rodriguez Pablo, 42949072
 		-Aguilera Emanuel, 41757402
-		-Tatiana Greve, 43031180
-		-Nogueira Denise, 41234014
-	Fecha: 12/11/24
+	Fecha: 26/11/24
 */
 
 /* Entrega 3
@@ -91,8 +89,8 @@ EXEC Venta.BorrarMedioDePago @MedioDePagoID=2
 -- ##### SP's de Cliente #####
 SELECT * FROM Venta.Cliente
 --Insercion exitosa
-EXEC Venta.InsetarCliente @TipoDeCliente='Miembro',@Genero='M',@Nombre='Pepe',@Apellido='Lopez',@DNI='98324755'
-EXEC Venta.InsetarCliente @TipoDeCliente='Normal',@Genero='F',@Nombre='Romina',@Apellido='Martinez',@DNI='98324756'
+EXEC Venta.InsetarCliente @TipoDeCliente='Miembro',@Genero='M',@Nombre='Pepe',@Apellido='Lopez',@DNI='98324755',@Cuil='20-98324755-4'
+EXEC Venta.InsetarCliente @TipoDeCliente='Normal',@Genero='F',@Nombre='Romina',@Apellido='Martinez',@DNI='98324756',@Cuil='24-98324756-2'
 --Actualizacion exitosa
 EXEC Venta.ModificarCliente @ClienteID=1, @Apellido='Ruiz'
 --Borrado exitoso

@@ -4,7 +4,7 @@
 	Integrantes:
 		-Rodriguez Pablo, 42949072
 		-Aguilera Emanuel, 41757402
-	Fecha: 12/11/24
+	Fecha: 26/11/24
 */
 
 /* Entrega 3

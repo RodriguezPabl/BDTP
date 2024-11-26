@@ -4,9 +4,7 @@
 	Integrantes:
 		-Rodriguez Pablo, 42949072
 		-Aguilera Emanuel, 41757402
-		-Tatiana Greve, 43031180
-		-Nogueira Denise, 41234014
-	Fecha: 12/11/24
+	Fecha: 26/11/24
 */
 
 /* Entrega 4
